@@ -6,7 +6,6 @@ pin = inputParser;
 pin.addParameter('smallWindow',false);   %Set to true to use a half-screen window
 pin.addParameter('bgColor',[0.25,0.25,0.25]);
 pin.addParameter('eyelink',false);
-pin.addParameter('bgColor',[0.25,0.25,0.25]);
 pin.addParameter('debug',false);
 pin.parse(varargin{:});
 smallWindow = pin.Results.smallWindow;
@@ -176,15 +175,16 @@ switch computerName
         % viewpoint eye tracker setup... note: space between 'DATA:' and the path is critical!
         vpCmds = {'setPath DATA: C:\Users\shaunc\Documents','calibration_RealRect 0.3 0.3 0.7 0.7'};
         
-        if true
+        if false
             % generic monitor           
             c = rig(c,'viewpoint',true,'mcc',false,'xpixels',rect(3)/2,'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'frameRate',fr,'screenNumber',scrNr,'viewpointCommands',vpCmds);
             
-            c.eye.sampleRate = 220;
-            c.eye.ipAddress = '192.168.1.2';
+%             c.eye.sampleRate = 220;
+%             c.eye.ipAddress = '192.168.1.2';
         else
             % experimental SOFTWARE-OVERLAY
-            c = rig(c,'viewpoint',false,'mcc',false,'xpixels',rect(3),'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'frameRate',fr,'screenNumber',scrNr);
+            c = rig(c,'viewpoint',true,'mcc',false,'xpixels',rect(3),'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'frameRate',fr,'screenNumber',scrNr,'viewpointCommands',vpCmds);
+                        
             c.screen.type = 'SOFTWARE-OVERLAY';
         
             consoleClut = [ ...
@@ -222,6 +222,9 @@ switch computerName
             g.diode.on = true;
             g.diode.color = 5; % white (subject's display only)
         end
+        
+        c.eye.sampleRate = 220;
+        c.eye.ipAddress = '192.168.1.2';
         
         smallWindow = false;
     otherwise
