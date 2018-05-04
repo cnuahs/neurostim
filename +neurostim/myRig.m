@@ -30,33 +30,35 @@ switch computerName
           c = rig(c,'eyelink',false,'mcc',false,'xpixels',300,'ypixels',300,'screenWidth',24,'frameRate',60,'screenNumber',max(Screen('screens')),'keyboardNumber',max(GetKeyboardIndices()));
         else
           % magic software overlay... EXPERIMENTAL!!
-          c = rig(c,'eyelink',false,'mcc',false,'xpixels',600,'ypixels',300,'screenWidth',24,'screenHeight',24,'frameRate',60,'screenNumber',max(Screen('screens')),'keyboardNumber',max(GetKeyboardIndices()));
+          c = rig(c,'eyelink',false,'mcc',false,'xpixels',900,'ypixels',450,'screenWidth',24,'screenHeight',24,'frameRate',60,'screenNumber',max(Screen('screens')),'keyboardNumber',max(GetKeyboardIndices()));
           c.screen.type  = 'SOFTWARE-OVERLAY'; % <-- note: xpixels will actually be half that passed to rig(), screenWidth/screenHeight (above) should reflect that
           
           consoleClut = [ ...
-            0.8,  0.0,  0.5;  % cursor       1
-            0.0,  1.0,  1.0;  % eye posn     2
-            1.0,  1.0,  1.0;  % windows      3
-            0.75, 0.75, 0.75; % grid         4
-            bgColor;          % diode        5
+            0.8,  0.0,  0.5;  % 1 cursor
+            0.0,  1.0,  1.0;  % 2 eye posn
+            1.0,  1.0,  1.0;  % 3 windows
+            0.75, 0.75, 0.75; % 4 grid
+            bgColor;          % 5 diode
+            1.0,  0.0,  0.0;  % 6 bg/red
+            0.0,  1.0,  0.0;  % 7 bg/green
           ];
         
           subjectClut = repmat(bgColor,size(consoleClut,1),1);
-          subjectClut(5,:) = [1.0, 1.0, 1.0]; % diode (white)   5
+          subjectClut(7,:) = [1.0, 1.0, 1.0]; % diode (white)   5
         
           % setup combined overlay CLUT
           c.screen.overlayClut = cat(1,subjectClut,consoleClut);
           
-          % show eye position on the overlay
+          % show eye position on the overlay (console only)
           f = stimuli.fixation(c,'ofix');
           f.shape = 'CIRC';
           f.size = 0.5;
           f.X = '@eye.x';
           f.Y = '@eye.y';
           f.overlay = true;
-          f.color = 2; % eye posn
+          f.color = 2; % 2 = eye posn
           
-          % draw the grid on the overlay...
+          % draw the grid on the overlay (console only)
           g = stimuli.grid(c,'grid');
           g.minor = 1;
           g.major = 5;
@@ -64,8 +66,8 @@ switch computerName
           g.overlay = true;
           g.color = 4; % 4 = grid, 3 = window (white)
 
-          g.diode.color = 5; % pixels (subject's display only)
-          g.diode.on = true;          
+          g.diode.color = 5; % 5 = white (subject display only)
+          g.diode.on = true;        
         end
         
         smallWindow = false;
@@ -188,11 +190,13 @@ switch computerName
             c.screen.type = 'SOFTWARE-OVERLAY';
         
             consoleClut = [ ...
-                0.8,  1.0,  0.5;  % cursor   1
-                0.0,  1.0,  1.0;  % eye posn 2
-                1.0,  1.0,  1.0;  % window   3
-                0.75, 0.75, 0.75; % grid     4
-                bgColor;          % diode    5
+                0.8,  1.0,  0.5;  % 1 cursor
+                0.0,  1.0,  1.0;  % 2 eye posn
+                1.0,  1.0,  1.0;  % 3 window
+                0.75, 0.75, 0.75; % 4 grid
+                bgColor;          % 5 diode
+                1.0,  0.0,  0.0;  % 6 bg/red
+                0.0,  1.0,  0.0;  % 7 bg/green
             ];
         
             subjectClut = repmat(bgColor,5,1);
@@ -200,16 +204,16 @@ switch computerName
             
             c.screen.overlayClut = cat(1,subjectClut,consoleClut);
         
-            % show eye position on the console display
+            % show eye position on the overlay (console only)
             e = stimuli.fixation(c,'eyepos');
             e.shape = 'CIRC';
             e.size = 0.5;
             e.X = '@eye.x';
             e.Y = '@eye.y';
             e.overlay = true;
-            e.color = 2; % eye posn
+            e.color = 2; % 2 = eye posn
     
-            % draw the grid on the console display
+            % draw the grid on the overlay (console only)
             g = stimuli.grid(c,'grid');
             g.minor = 1;
             g.major = 5;
@@ -218,9 +222,9 @@ switch computerName
             g.color = 4; % 4 = grid, 3 = window (white)
         
             % show the diode on the subject's display (only)
-            g.diode.size = 0.025; % fraction of xscreen (pixels)
+            g.diode.size = 0.025; % fraction of screen xpixels
             g.diode.on = true;
-            g.diode.color = 5; % white (subject's display only)
+            g.diode.color = 5; % 5 = white (subject display only)
         end
         
         c.eye.sampleRate = 220;
