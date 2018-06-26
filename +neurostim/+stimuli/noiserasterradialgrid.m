@@ -49,7 +49,29 @@ classdef noiserasterradialgrid < neurostim.stimuli.noiserasterclut
             
             %Assign an integer ID to wedges
             wedgeBinWidth = 2*pi/o.nWedges;
-            radBins = linspace(inner,outer,o.nRadii+1);
+%             radBins = linspace(inner,outer,o.nRadii+1);
+            
+            %%
+            % scale with eccentricity c.f. Slotnick et al., Clin. Neurophys. 112(7):1349-1356, 2001.
+            %
+            %   (1/M) = (E - E2)/A
+            %
+            % where M = cortical magnification (mm/deg.)
+            %       E = eccentricity (deg.)
+            %       E2 = horizontal intercept (eccentricity corresponding
+            %            to half the area (?) at the fovea?)
+            %       A = slope (change in magnification with eccentricity)
+            E2 = 0.5; % deg.
+            A = 21.7; % mm
+            
+            invM = ([o.innerRad, o.outerRad] - E2)./A; % note: innerRad and outerRad must be in deg.!
+            invM = linspace(invM(1),invM(2),o.nRadii+1);
+            invM = invM(1:end-1);   
+            
+            dE = (outer - inner)./sum(invM); % note: normalized!
+            
+            radBins = cumsum([inner, invM*dE]);
+            %%
             
             [~,~,thSub]=histcounts(pixTh,'binWidth',wedgeBinWidth);
             [~,~,radSub]=histcounts(pixR,radBins);
