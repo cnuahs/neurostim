@@ -90,16 +90,7 @@ classdef newera <  neurostim.plugins.liquid
     function afterExperiment(o)
       % close the pump
       o.close();
-    end
-    
-    function keyboard(o,key)
-      % manual reward... via keyboard hotkey
-
-      % which key was pressed?
-      item = find(strcmpi(key,o.keys));
-               
-      o.deliver(item);
-    end
+    end    
   end
   
   methods (Access = protected)
