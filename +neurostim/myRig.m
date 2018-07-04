@@ -175,7 +175,7 @@ switch computerName
         scrHght = 29.8;
         
         % viewpoint eye tracker setup... note: space between 'DATA:' and the path is critical!
-        vpCmds = {'setPath DATA: C:\Users\shaunc\Documents','calibration_RealRect 0.3 0.3 0.7 0.7'};
+        vpCmds = {'setPath DATA: C:\Users\shaunc\Documents','calibration_RealRect 0.3 0.3 0.7 0.7','videoMirror V'};
         
         if false
             % generic monitor           
@@ -223,13 +223,15 @@ switch computerName
         
             % show the diode on the subject's display (only)
             g.diode.size = 0.025; % fraction of screen xpixels
-            g.diode.on = true;
+            g.diode.on = false;
             g.diode.color = 5; % 5 = white (subject display only)
         end
         
         c.eye.sampleRate = 220;
         c.eye.ipAddress = '192.168.1.2';
-        
+
+        c.cursor = 'none';
+
         smallWindow = false;
     otherwise
         warning('This computer is not recognised. Using default settings.');
