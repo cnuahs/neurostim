@@ -199,7 +199,7 @@ switch computerName
                 0.0,  1.0,  0.0;  % 7 bg/green
             ];
         
-            subjectClut = repmat(bgColor,5,1);
+            subjectClut = repmat(bgColor,7,1);
             subjectClut(5,:) = [1.0, 1.0, 1.0]; % diode (white) 5
             
             c.screen.overlayClut = cat(1,subjectClut,consoleClut);
@@ -225,6 +225,12 @@ switch computerName
             g.diode.size = 0.025; % fraction of screen xpixels
             g.diode.on = false;
             g.diode.color = 5; % 5 = white (subject display only)
+            
+            jj = plugins.newera(c);
+            jj.port = '/dev/ttyUSB0';
+            jj.diameter = 20.0;
+            jj.rate = 10.0;
+            jj.add('volume',0.010,'key','j');
         end
         
         c.eye.sampleRate = 220;
