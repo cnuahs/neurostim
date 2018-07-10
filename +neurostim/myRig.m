@@ -44,7 +44,7 @@ switch computerName
           ];
         
           subjectClut = repmat(bgColor,size(consoleClut,1),1);
-          subjectClut(7,:) = [1.0, 1.0, 1.0]; % diode (white)   5
+          subjectClut(5,:) = [1.0, 1.0, 1.0]; % diode (white)   5
         
           % setup combined overlay CLUT
           c.screen.overlayClut = cat(1,subjectClut,consoleClut);
@@ -59,7 +59,7 @@ switch computerName
           f.color = 2; % 2 = eye posn
           
           % draw the grid on the overlay (console only)
-          g = stimuli.grid(c,'grid');
+          g = marmolab.stimuli.grid(c,'grid');
           g.minor = 1;
           g.major = 5;
           g.size = 0.1;
@@ -199,8 +199,8 @@ switch computerName
                 0.0,  1.0,  0.0;  % 7 bg/green
             ];
         
-            subjectClut = repmat(bgColor,7,1);
-            subjectClut(5,:) = [1.0, 1.0, 1.0]; % diode (white) 5
+            subjectClut = repmat(bgColor,size(consoleClut,1),1);
+            subjectClut(5,:) = [1.0, 1.0, 1.0]; % 5 diode (white)
             
             c.screen.overlayClut = cat(1,subjectClut,consoleClut);
         
@@ -225,14 +225,16 @@ switch computerName
             g.diode.size = 0.025; % fraction of screen xpixels
             g.diode.on = false;
             g.diode.color = 5; % 5 = white (subject display only)
-            
-            jj = plugins.newera(c);
-            jj.port = '/dev/ttyUSB0';
-            jj.diameter = 20.0;
-            jj.rate = 10.0;
-            jj.add('volume',0.010,'key','j');
         end
         
+        % add reward...
+        r = plugins.newera(c);
+        r.port = '/dev/ttyUSB0';
+        r.diameter = 20.0;
+        r.rate = 10.0;
+        r.add('volume',0.010,'key','j');
+        
+        % configure Viewpoint eye tracker
         c.eye.sampleRate = 220;
         c.eye.ipAddress = '192.168.1.2';
 
