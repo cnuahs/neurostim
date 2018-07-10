@@ -171,21 +171,22 @@ switch computerName
         rect = Screen('rect',scrNr);
         
         % BenQ XL2411z viewable area is 531.36 x 298.89 mm
-        scrWdth = 53.1; % deg. (approx., at 57cm viewing distance)
-        scrHght = 29.8;
+%         scrWdth = 53.1; % deg. (approx., at 57cm viewing distance)
+%         scrHght = 29.8;
+        
+        scrDist = 48.0; % cm
+        scrWdth = 2*atan2d(53.1/2,scrDist);
+        scrHght = 2*atan2d(29.8/2,scrDist);
         
         % viewpoint eye tracker setup... note: space between 'DATA:' and the path is critical!
-        vpCmds = {'setPath DATA: C:\Users\shaunc\Documents','calibration_RealRect 0.3 0.3 0.7 0.7','videoMirror V'};
+        vpCmds = {'setPath DATA: C:\Users\shaunc\Documents','calibration_RealRect 0.3 0.3 0.7 0.7','videoMirror H V'};
         
         if false
             % generic monitor           
-            c = rig(c,'viewpoint',true,'mcc',false,'xpixels',rect(3)/2,'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'frameRate',fr,'screenNumber',scrNr,'viewpointCommands',vpCmds);
-            
-%             c.eye.sampleRate = 220;
-%             c.eye.ipAddress = '192.168.1.2';
+            c = rig(c,'viewpoint',true,'mcc',false,'xpixels',rect(3)/2,'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'screenDist',scrDist,'frameRate',fr,'screenNumber',scrNr,'viewpointCommands',vpCmds);
         else
             % experimental SOFTWARE-OVERLAY
-            c = rig(c,'viewpoint',true,'mcc',false,'xpixels',rect(3),'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'frameRate',fr,'screenNumber',scrNr,'viewpointCommands',vpCmds);
+            c = rig(c,'viewpoint',true,'mcc',false,'xpixels',rect(3),'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'screenDist',scrDist,'frameRate',fr,'screenNumber',scrNr,'viewpointCommands',vpCmds);
                         
             c.screen.type = 'SOFTWARE-OVERLAY';
         
