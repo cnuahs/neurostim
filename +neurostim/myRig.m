@@ -179,7 +179,7 @@ switch computerName
         scrHght = 2*atan2d(29.8/2,scrDist);
         
         % viewpoint eye tracker setup... note: space between 'DATA:' and the path is critical!
-        vpCmds = {'setPath DATA: C:\Users\shaunc\Documents','calibration_RealRect 0.3 0.3 0.7 0.7','videoMirror H V'};
+        vpCmds = {'setPath DATA: C:\Users\shaunc\Documents','calibration_RealRect 0.3 0.3 0.7 0.7','videoMirror V'};
         
         if false
             % generic monitor           
