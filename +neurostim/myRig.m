@@ -50,7 +50,7 @@ switch computerName
           c.screen.overlayClut = cat(1,subjectClut,consoleClut);
           
           % show eye position on the overlay (console only)
-          f = stimuli.fixation(c,'ofix');
+          f = stimuli.fixation(c,'eyepos');
           f.shape = 'CIRC';
           f.size = 0.5;
           f.X = '@eye.x';
@@ -231,7 +231,7 @@ switch computerName
         % add reward...
         r = plugins.newera(c);
         r.port = '/dev/ttyUSB0';
-        r.diameter = 20.0;
+        r.diameter = 15.8; % Terumo 10mL (max. rate is 10mL/min)
         r.rate = 10.0;
         r.add('volume',0.010,'key','j');
         
