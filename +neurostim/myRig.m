@@ -215,7 +215,7 @@ switch computerName
             e.color = 2; % 2 = eye posn
     
             % draw the grid on the overlay (console only)
-            g = stimuli.grid(c,'grid');
+            g = marmolab.stimuli.grid(c,'grid');
             g.minor = 1;
             g.major = 5;
             g.size = 0.05;
