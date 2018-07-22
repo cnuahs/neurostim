@@ -259,3 +259,6 @@ end
 c.screen.color.background = bgColor;
 c.iti = 500;
 c.trialDuration = 500;
+
+% hide ptb's splash screen on startup
+Screen('Preference', 'VisualDebugLevel', 1);
