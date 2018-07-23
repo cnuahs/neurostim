@@ -26,51 +26,54 @@ c.dirs.output = tempdir; % Output files will be stored here.
 switch computerName
     case 'MU00101417X'
         % Shaun's MacBook Pro
-        if false
-          c = rig(c,'eyelink',false,'mcc',false,'xpixels',300,'ypixels',300,'screenWidth',24,'frameRate',60,'screenNumber',max(Screen('screens')),'keyboardNumber',max(GetKeyboardIndices()));
-        else
-          % magic software overlay... EXPERIMENTAL!!
-          c = rig(c,'eyelink',false,'mcc',false,'xpixels',900,'ypixels',450,'screenWidth',24,'screenHeight',24,'frameRate',60,'screenNumber',max(Screen('screens')),'keyboardNumber',max(GetKeyboardIndices()));
-          c.screen.type  = 'SOFTWARE-OVERLAY'; % <-- note: xpixels will actually be half that passed to rig(), screenWidth/screenHeight (above) should reflect that
-          
-          consoleClut = [ ...
-            0.8,  0.0,  0.5;  % 1 cursor
-            0.0,  1.0,  1.0;  % 2 eye posn
-            1.0,  1.0,  1.0;  % 3 windows
-            0.75, 0.75, 0.75; % 4 grid
-            bgColor;          % 5 diode
-            1.0,  0.0,  0.0;  % 6 bg/red
-            0.0,  1.0,  0.0;  % 7 bg/green
-          ];
+        c = marmolab.myRig(computerName);
+        return
         
-          subjectClut = repmat(bgColor,size(consoleClut,1),1);
-          subjectClut(5,:) = [1.0, 1.0, 1.0]; % diode (white)   5
-        
-          % setup combined overlay CLUT
-          c.screen.overlayClut = cat(1,subjectClut,consoleClut);
-          
-          % show eye position on the overlay (console only)
-          f = stimuli.fixation(c,'eyepos');
-          f.shape = 'CIRC';
-          f.size = 0.5;
-          f.X = '@eye.x';
-          f.Y = '@eye.y';
-          f.overlay = true;
-          f.color = 2; % 2 = eye posn
-          
-          % draw the grid on the overlay (console only)
-          g = marmolab.stimuli.grid(c,'grid');
-          g.minor = 1;
-          g.major = 5;
-          g.size = 0.1;
-          g.overlay = true;
-          g.color = 4; % 4 = grid, 3 = window (white)
-
-          g.diode.color = 5; % 5 = white (subject display only)
-          g.diode.on = true;        
-        end
-        
-        smallWindow = false;
+%         if false
+%           c = rig(c,'eyelink',false,'mcc',false,'xpixels',300,'ypixels',300,'screenWidth',24,'frameRate',60,'screenNumber',max(Screen('screens')),'keyboardNumber',max(GetKeyboardIndices()));
+%         else
+%           % magic software overlay... EXPERIMENTAL!!
+%           c = rig(c,'eyelink',false,'mcc',false,'xpixels',900,'ypixels',450,'screenWidth',24,'screenHeight',24,'frameRate',60,'screenNumber',max(Screen('screens')),'keyboardNumber',max(GetKeyboardIndices()));
+%           c.screen.type  = 'SOFTWARE-OVERLAY'; % <-- note: xpixels will actually be half that passed to rig(), screenWidth/screenHeight (above) should reflect that
+%           
+%           consoleClut = [ ...
+%             0.8,  0.0,  0.5;  % 1 cursor
+%             0.0,  1.0,  1.0;  % 2 eye posn
+%             1.0,  1.0,  1.0;  % 3 windows
+%             0.75, 0.75, 0.75; % 4 grid
+%             bgColor;          % 5 diode
+%             1.0,  0.0,  0.0;  % 6 bg/red
+%             0.0,  1.0,  0.0;  % 7 bg/green
+%           ];
+%         
+%           subjectClut = repmat(bgColor,size(consoleClut,1),1);
+%           subjectClut(5,:) = [1.0, 1.0, 1.0]; % diode (white)   5
+%         
+%           % setup combined overlay CLUT
+%           c.screen.overlayClut = cat(1,subjectClut,consoleClut);
+%           
+%           % show eye position on the overlay (console only)
+%           f = stimuli.fixation(c,'eyepos');
+%           f.shape = 'CIRC';
+%           f.size = 0.5;
+%           f.X = '@eye.x';
+%           f.Y = '@eye.y';
+%           f.overlay = true;
+%           f.color = 2; % 2 = eye posn
+%           
+%           % draw the grid on the overlay (console only)
+%           g = marmolab.stimuli.grid(c,'grid');
+%           g.minor = 1;
+%           g.major = 5;
+%           g.size = 0.1;
+%           g.overlay = true;
+%           g.color = 4; % 4 = grid, 3 = window (white)
+% 
+%           g.diode.color = 5; % 5 = white (subject display only)
+%           g.diode.on = true;        
+%         end
+%         
+%         smallWindow = false;
         
     case 'MU00043185'
         %Office PC
@@ -166,84 +169,87 @@ switch computerName
         smallWindow = false;
     case 'ns2'
         % marmolab rig #1 (Ubuntu 16.04), GTX980Ti, dual BenQ XT2411z (1920x1080 @ 100Hz?)
-        scrNr = max(Screen('screens'));
-        fr = Screen('FrameRate',scrNr);
-        rect = Screen('rect',scrNr);
+        c = marmolab.myRig(computerName);
+        return
         
-        % BenQ XL2411z viewable area is 531.36 x 298.89 mm
-%         scrWdth = 53.1; % deg. (approx., at 57cm viewing distance)
-%         scrHght = 29.8;
-        
-        scrDist = 48.0; % cm
-        scrWdth = 2*atan2d(53.1/2,scrDist);
-        scrHght = 2*atan2d(29.8/2,scrDist);
-        
-        % viewpoint eye tracker setup... note: space between 'DATA:' and the path is critical!
-        vpCmds = {'setPath DATA: C:\Users\shaunc\Documents','calibration_RealRect 0.3 0.3 0.7 0.7','videoMirror V'};
-        
-        if false
-            % generic monitor           
-            c = rig(c,'viewpoint',true,'mcc',false,'xpixels',rect(3)/2,'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'screenDist',scrDist,'frameRate',fr,'screenNumber',scrNr,'viewpointCommands',vpCmds);
-        else
-            % experimental SOFTWARE-OVERLAY
-            c = rig(c,'viewpoint',true,'mcc',false,'xpixels',rect(3),'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'screenDist',scrDist,'frameRate',fr,'screenNumber',scrNr,'viewpointCommands',vpCmds);
-                        
-            c.screen.type = 'SOFTWARE-OVERLAY';
-        
-            consoleClut = [ ...
-                0.8,  1.0,  0.5;  % 1 cursor
-                0.0,  1.0,  1.0;  % 2 eye posn
-                1.0,  1.0,  1.0;  % 3 window
-                0.75, 0.75, 0.75; % 4 grid
-                bgColor;          % 5 diode
-                1.0,  0.0,  0.0;  % 6 bg/red
-                0.0,  1.0,  0.0;  % 7 bg/green
-            ];
-        
-            subjectClut = repmat(bgColor,size(consoleClut,1),1);
-            subjectClut(5,:) = [1.0, 1.0, 1.0]; % 5 diode (white)
-            
-            c.screen.overlayClut = cat(1,subjectClut,consoleClut);
-        
-            % show eye position on the overlay (console only)
-            e = stimuli.fixation(c,'eyepos');
-            e.shape = 'CIRC';
-            e.size = 0.5;
-            e.X = '@eye.x';
-            e.Y = '@eye.y';
-            e.overlay = true;
-            e.color = 2; % 2 = eye posn
-    
-            % draw the grid on the overlay (console only)
-            g = marmolab.stimuli.grid(c,'grid');
-            g.minor = 1;
-            g.major = 5;
-            g.size = 0.05;
-            g.overlay = true;
-            g.color = 4; % 4 = grid, 3 = window (white)
-        
-            % show the diode on the subject's display (only)
-            g.diode.size = 0.025; % fraction of screen xpixels
-            g.diode.on = false;
-            g.diode.color = 5; % 5 = white (subject display only)
-        end
-        
-        % add reward...
-        r = plugins.newera(c);
-        r.port = '/dev/ttyUSB0';
-        r.diameter = 15.8; % Terumo 10mL (max. rate is 10mL/min)
-        r.rate = 10.0;
-        r.add('volume',0.010,'key','j');
-        
-        % configure Viewpoint eye tracker
-        c.eye.sampleRate = 220;
-        c.eye.ipAddress = '192.168.1.2';
-
-        c.dirs.output = fullfile(getenv('HOME'),'data');
-        
-        c.cursor = 'none';
-
-        smallWindow = false;
+%         scrNr = max(Screen('screens'));
+%         fr = Screen('FrameRate',scrNr);
+%         rect = Screen('rect',scrNr);
+%         
+%         % BenQ XL2411z viewable area is 531.36 x 298.89 mm
+% %         scrWdth = 53.1; % deg. (approx., at 57cm viewing distance)
+% %         scrHght = 29.8;
+%         
+%         scrDist = 48.0; % cm
+%         scrWdth = 2*atan2d(53.1/2,scrDist);
+%         scrHght = 2*atan2d(29.8/2,scrDist);
+%         
+%         % viewpoint eye tracker setup... note: space between 'DATA:' and the path is critical!
+%         vpCmds = {'setPath DATA: C:\Users\shaunc\Documents','calibration_RealRect 0.3 0.3 0.7 0.7','videoMirror V'};
+%         
+%         if false
+%             % generic monitor           
+%             c = rig(c,'viewpoint',true,'mcc',false,'xpixels',rect(3)/2,'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'screenDist',scrDist,'frameRate',fr,'screenNumber',scrNr,'viewpointCommands',vpCmds);
+%         else
+%             % experimental SOFTWARE-OVERLAY
+%             c = rig(c,'viewpoint',true,'mcc',false,'xpixels',rect(3),'ypixels',rect(4),'screenWidth',scrWdth,'screenHeight',scrHght,'screenDist',scrDist,'frameRate',fr,'screenNumber',scrNr,'viewpointCommands',vpCmds);
+%                         
+%             c.screen.type = 'SOFTWARE-OVERLAY';
+%         
+%             consoleClut = [ ...
+%                 0.8,  1.0,  0.5;  % 1 cursor
+%                 0.0,  1.0,  1.0;  % 2 eye posn
+%                 1.0,  1.0,  1.0;  % 3 window
+%                 0.75, 0.75, 0.75; % 4 grid
+%                 bgColor;          % 5 diode
+%                 1.0,  0.0,  0.0;  % 6 bg/red
+%                 0.0,  1.0,  0.0;  % 7 bg/green
+%             ];
+%         
+%             subjectClut = repmat(bgColor,size(consoleClut,1),1);
+%             subjectClut(5,:) = [1.0, 1.0, 1.0]; % 5 diode (white)
+%             
+%             c.screen.overlayClut = cat(1,subjectClut,consoleClut);
+%         
+%             % show eye position on the overlay (console only)
+%             e = stimuli.fixation(c,'eyepos');
+%             e.shape = 'CIRC';
+%             e.size = 0.5;
+%             e.X = '@eye.x';
+%             e.Y = '@eye.y';
+%             e.overlay = true;
+%             e.color = 2; % 2 = eye posn
+%     
+%             % draw the grid on the overlay (console only)
+%             g = marmolab.stimuli.grid(c,'grid');
+%             g.minor = 1;
+%             g.major = 5;
+%             g.size = 0.05;
+%             g.overlay = true;
+%             g.color = 4; % 4 = grid, 3 = window (white)
+%         
+%             % show the diode on the subject's display (only)
+%             g.diode.size = 0.025; % fraction of screen xpixels
+%             g.diode.on = false;
+%             g.diode.color = 5; % 5 = white (subject display only)
+%         end
+%         
+%         % add reward...
+%         r = plugins.newera(c);
+%         r.port = '/dev/ttyUSB0';
+%         r.diameter = 15.8; % Terumo 10mL (max. rate is 10mL/min)
+%         r.rate = 10.0;
+%         r.add('volume',0.010,'key','j');
+%         
+%         % configure Viewpoint eye tracker
+%         c.eye.sampleRate = 220;
+%         c.eye.ipAddress = '192.168.1.2';
+% 
+%         c.dirs.output = fullfile(getenv('HOME'),'Documents','data');
+%         
+%         c.cursor = 'none';
+% 
+%         smallWindow = false;
     otherwise
         warning('This computer is not recognised. Using default settings.');
         scrNr = max(Screen('screens'));
