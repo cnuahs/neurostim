@@ -239,6 +239,8 @@ switch computerName
         c.eye.sampleRate = 220;
         c.eye.ipAddress = '192.168.1.2';
 
+        c.dirs.output = fullfile(getenv('HOME'),'data');
+        
         c.cursor = 'none';
 
         smallWindow = false;
