@@ -26,7 +26,7 @@ c.dirs.output = tempdir; % Output files will be stored here.
 switch computerName
     case 'MU00101417X'
         % Shaun's MacBook Pro
-        c = marmolab.myRig(computerName);
+        c = marmolab.rigcfg();
         return
         
 %         if false
@@ -169,7 +169,7 @@ switch computerName
         smallWindow = false;
     case 'ns2'
         % marmolab rig #1 (Ubuntu 16.04), GTX980Ti, dual BenQ XT2411z (1920x1080 @ 100Hz?)
-        c = marmolab.myRig(computerName);
+        c = marmolab.rigcfg();
         return
         
 %         scrNr = max(Screen('screens'));
