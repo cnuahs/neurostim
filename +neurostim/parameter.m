@@ -129,6 +129,7 @@ classdef parameter < handle & matlab.mixin.Copyable
         function storeInLog(o,v)
             % Store and Log the new value for this parm
             
+
             % Check if the value changed and log only the changes. 
             % (at some point this seemed to be slower than just logging everything. 
             % but tests on July 1st 2017 showed that this was (no longer) correct. 
@@ -164,9 +165,9 @@ classdef parameter < handle & matlab.mixin.Copyable
         function v = getValue(o,~)
             % The dynamic property uses this as its GetMethod
             if isempty(o.fun)
-                v = o.value;           
+                v = o.value;
             else
-                 % The dynamic property defined with a function uses this as its GetMethod
+                % The dynamic property defined with a function uses this as its GetMethod
                 v=o.fun(o.funPrms);
                 %The value might have changed, so allow it to be logged if need be
                 storeInLog(o,v);
@@ -174,22 +175,22 @@ classdef parameter < handle & matlab.mixin.Copyable
         end
         
         function setValue(o,~,v)
-           
+            
             %Check for a function definition
             if strncmpi(v,'@',1)
                 % The dynprop was set to a neurostim function
                 % Parse the specified function and make it into an anonymous function.
                 o.funStr = v; % store this to be able to restore it later.
-
+                
                 %If we are still at setup (i.e. not run-time), don't build the function b/c referenced objects might not exist yet.
                 %It will happen once c.run() starts using o.funStr
                 if o.plg.cic.stage >o.plg.cic.SETUP
                     %Construct the anonymous function (f(args), where args are neurostim.parameter handles)
                     %If still in setup, the function properties will just return the function string
                     [o.fun,o.funPrms] = neurostim.utils.str2fun(v,o.plg.cic);
-
+                    
                     % Evaluate the function to get current value
-                    v= getValue(o);                    
+                    v= getValue(o);
                 else
                     %Add it to the list of functions to be made at runtime.
                     addFunProp(o.plg.cic,o.plg.name,o.hDynProp.Name)
@@ -200,7 +201,7 @@ classdef parameter < handle & matlab.mixin.Copyable
                 o.fun = [];
                 o.funStr = '';
                 o.funPrms = [];
-                delFunProp(o.plg.cic,o.plg.name,o.hDynProp.Name);                
+                delFunProp(o.plg.cic,o.plg.name,o.hDynProp.Name);
             end
             
             % validate
@@ -210,8 +211,8 @@ classdef parameter < handle & matlab.mixin.Copyable
             % Log the new value
             storeInLog(o,v);
         end
-  
-                
+        
+        
         % Called before saving an object to clean out the empty elements in
         % the log.
         function pruneLog(o)
@@ -285,13 +286,17 @@ classdef parameter < handle & matlab.mixin.Copyable
             % after this event.
             % 'trial'  - request only entries occuring in this set of
             % trials.
-            %
+            % 'withDataOnly' - return only events with data.
+            % 'dataIsMember' - return only those events where the data
+            % matches this cell/vector of elements.
+            
             p =inputParser;
             p.addParameter('atTrialTime',[],@isnumeric); % Return values at this time in the trial
             p.addParameter('after','',@ischar); % Return the first value after this event in the trial
             p.addParameter('trial',[],@isnumeric); % Return only values in these trials
             p.addParameter('withDataOnly',false,@islogical); % Only those values that have data
-            
+            p.addParameter('dataIsMember',{});  %Only when data is a member of the list
+            p.addParameter('matrixIfPossible',true); % Convert to a [NRTRIALS N] matrix if possible
             p.parse(varargin{:});
             
             data = o.log(1:o.cntr);
@@ -351,44 +356,38 @@ classdef parameter < handle & matlab.mixin.Copyable
                         block = NaN; % Should never happen...
                     end
                 end
-                
-                %Convert cell array to a matrix if possible
-                data = neurostim.parameter.matrixIfPossible(data);
             end
             
+            % Some more pruning if requested
+            out = false(size(data));
             if ~isempty(p.Results.trial)
-                stay = ismember(trial,p.Results.trial);
-                if iscell(data)
-                    data=data(stay);
-                else
-                    sz = size(data);
-                    data = data(stay,:);
-                    data = reshape(data,[sum(stay),sz(2:end)]);
-                end
-                trial = trial(stay);
-                time = time(stay);
-                trialTime = trialTime(stay);
-                block = block(stay);
+                out = out | ~ismember(trial,p.Results.trial);
             end
             
-            if isvector(data)
-                data=data(:);
+            if iscell(data)
+                if p.Results.withDataOnly
+                    out  = out | cellfun(@isempty,data);
+                end
+                if ~isempty(p.Results.dataIsMember)
+                    out = out | cellfun(@(x)(~ismember(x,p.Results.dataIsMember)),data);
+                end
             end
+            % Prune
+            data(out) =[];
+            time(out) =[];
+            block(out) = [];
+            trial(out) =[];
+            trialTime(out)=[];
+            
+            
+           
             trialTime = trialTime(:);
             time = time(:);
             block = block(:);
             trial = trial(:);
-            
-            if p.Results.withDataOnly && iscell(data)
-                out  = cellfun(@isempty,data);
-                data(out) =[];
-                data = neurostim.parameter.matrixIfPossible(data);
-                time(out) =[];
-                block(out) = [];
-                trial(out) =[];
-                trialTime(out)=[];
+            if p.Results.matrixIfPossible
+               data=  neurostim.parameter.matrixIfPossible(data);
             end
-            
         end
         
         
@@ -400,7 +399,7 @@ classdef parameter < handle & matlab.mixin.Copyable
             %       stimulus on each trial... for that see firstFrameTime()
             %       below.
             tr = [o.plg.cic.prms.trial.log{:}]; % This includes trial=0
-            t = o.plg.cic.prms.trial.time;   % Start of the trial            
+            t = o.plg.cic.prms.trial.time;   % Start of the trial
             t(tr==0) = [];
             t(isnan(t))= [];
             assert(numel(t)<=o.plg.cic.nrTrialsTotal,'The trial counter %d does not match the number of started trials (%d)',o.plg.cic.nrTrialsTotal,numel(t));
@@ -414,7 +413,7 @@ classdef parameter < handle & matlab.mixin.Copyable
         function tr = eTime2TrialNumber(o,eventTime)
             trStartT = trialStartTime(o);
             tr = arrayfun(@(t,t0) neurostim.parameter.align(t,trStartT,true),eventTime);%,'UniformOutput',false);
-            assert(~any(tr> o.plg.cic.nrTrialsTotal),'Some trial numbers are larger than the max number of trials (%d)',o.plg.cic.nrTrialsTotal);                        
+            assert(~any(tr> o.plg.cic.nrTrialsTotal),'Some trial numbers are larger than the max number of trials (%d)',o.plg.cic.nrTrialsTotal);
         end
         
         function trTime= eTime2TrialTime(o,eventTime)
@@ -428,8 +427,8 @@ classdef parameter < handle & matlab.mixin.Copyable
             eTime = trTime + trStartT(tr);
         end
         
-                
-      
+        
+        
         
     end
     
@@ -473,12 +472,13 @@ classdef parameter < handle & matlab.mixin.Copyable
         function [v] = align(t,trialT,returnTr)
             % computes the time of experiment time t relative to the alignment time trialT
             tr = find(t>=trialT,1,'last');
+
             if isempty(tr)
-                    % Happened before first trial start
-                    tr =1;
+                % Happened before first trial start
+                tr =1;
             end
-                
-            if returnTr% 
+            
+            if returnTr%
                 %Return the trial number
                 v = tr;
             else
