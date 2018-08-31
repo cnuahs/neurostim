@@ -4,12 +4,10 @@ function c = myRig(varargin)
 %Feel free to add your PC/rig to the list
 pin = inputParser;
 pin.addParameter('smallWindow',false);   %Set to true to use a half-screen window
-pin.addParameter('bgColor',[0.25,0.25,0.25]);
 pin.addParameter('eyelink',false);
 pin.addParameter('debug',false);
 pin.parse(varargin{:});
 smallWindow = pin.Results.smallWindow;
-bgColor = pin.Results.bgColor;
 
 import neurostim.*
 
@@ -28,7 +26,7 @@ switch computerName
         % Shaun's MacBook Pro and marmolab rig #1
         c = marmolab.rigcfg();
         return
-                
+        
     case 'MU00043185'
         %Office PC
         c = rig(c,'eyelink',false,'mcc',false,'xpixels',1680,'ypixels',1050,'screenWidth',42,'frameRate',60,'screenNumber',max(Screen('screens')));
@@ -44,7 +42,7 @@ switch computerName
         
     case 'MOBOT'
         %Home
-        c = rig(c,'xpixels',1920,'ypixels',1200,'screenWidth',42,'frameRate',60,'screenNumber',0);
+        c = rig(c,'xorigin',950,'yorigin',550,'xpixels',1920,'ypixels',1200,'screenWidth',42,'frameRate',60,'screenNumber',0);
         smallWindow = true;
         
     case 'CMBN-Presentation-Airbook.local'
@@ -93,7 +91,7 @@ switch computerName
         smallWindow = false;
     case '2014C'
         % Presentation computer
-        c = rig(c,'eyelink',false,'outputdir','c:/temp/','mcc',false,'xpixels',1920,'ypixels',1080,'screenWidth',133,'screenHeight',75, 'frameRate',60,'screenNumber',1);
+       c = rig(c,'eyelink',false,'outputdir','c:/temp/','mcc',false,'xpixels',1920,'ypixels',1080,'screenWidth',133,'screenHeight',75, 'frameRate',60,'screenNumber',1);
         Screen('Preference', 'SkipSyncTests', 2);
     case 'PTB-P'
         Screen('Preference', 'SkipSyncTests', 0);
@@ -104,26 +102,31 @@ switch computerName
         c.timing.vsyncMode =0;
         c.timing.frameSlack = 0.1;
         c.eye.sampleRate  = 250;
-    case 'PTB-P-UBUNTU'
+   case 'PTB-P-UBUNTU'
         c = rig(c,'keyboardNumber',[],'eyelink',pin.Results.eyelink,'outputdir','c:/temp/','mcc',false,'xpixels',1920,'ypixels',1080,'screenWidth',52,'frameRate',120,'screenNumber',1);
         
         c.screen.colorMode = 'RGB';            
         smallWindow = false;      
         c.eye.sampleRate  = 250;
-    case 'PC2017A'
+  case 'PC2017A'
         scrNr = max(Screen('screens'));
         fr = Screen('FrameRate',scrNr);
         rect = Screen('rect',scrNr);
         c = rig(c,'xpixels',rect(3),'ypixels',rect(4),'screenWidth',42,'frameRate',max(fr,60),'screenNumber',scrNr);
         Screen('Preference', 'SkipSyncTests', 2);
         smallWindow = true;
+    case 'PC-2018D'
+        scrNr = max(Screen('screens'));
+        fr = Screen('FrameRate',scrNr);
+        rect = Screen('rect',scrNr);
+        c = rig(c,'xpixels',rect(3),'ypixels',rect(4),'screenWidth',42,'frameRate',max(fr,60),'screenNumber',scrNr);
+        Screen('Preference', 'SkipSyncTests', 0);
+        smallWindow = false;
     case 'ROOT-PC'
         c = rig(c,'xpixels',1280,'ypixels',1024,'screenWidth',40,'frameRate',85,'screenNumber',max(Screen('screens')));
-
-        smallWindow = false;
-        
+        smallWindow = false;    
     otherwise
-        warning('This computer is not recognised. Using default settings.');
+        warning('a:b','This computer (%s) is not recognised. Using default settings.\nHint: edit neurostim.myRig to prevent this warning.',computerName);
         scrNr = max(Screen('screens'));
         fr = Screen('FrameRate',scrNr);
         rect = Screen('rect',scrNr);
@@ -136,9 +139,6 @@ if smallWindow
     c.screen.ypixels = c.screen.ypixels/2;
 end
 
-c.screen.color.background = bgColor;
+c.screen.color.background = [0.25 0.25 0.25];
 c.iti = 500;
 c.trialDuration = 500;
-
-% hide ptb's splash screen on startup
-Screen('Preference', 'VisualDebugLevel', 1);
