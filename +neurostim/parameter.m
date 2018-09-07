@@ -45,23 +45,22 @@ classdef parameter < handle & matlab.mixin.Copyable
     end
     
     properties (SetAccess= protected, GetAccess=public)
-        name;   % Name of this property
-        value;  % Current value
-        default; % The default value; set at the beginning of the experiment.
-        log;    % Previous values;
-        time;   % Time at which previous values were set
-        trial;    % Trial in which previous values were set.
-        cntr=0; % Counter to store where in the log we are.
-        capacity=0; % Capacity to store in log
-        
-        noLog; % Set this to true to skip logging
-        sticky; % set this to true to make value(s) sticky, i.e., across trials
-        fun =[];        % Function to allow across parameter dependencies
+
+        name;                       % Name of this property
+        value;                      % Current value
+        default;                    % The default value; set at the beginning of the experiment.
+        log;                        % Previous values;
+        time;                       % Time at which previous values were set
+        cntr=0;                     % Counter to store where in the log we are.
+        capacity=0;                 % Capacity to store in log
+        noLog;                      % Set this to true to skip logging
+        sticky;                     % set this to true to make value(s) sticky, i.e., across trials
+        fun =[];                    % Function to allow across parameter dependencies
         funPrms;
-        funStr = '';    % The neurostim function string
-        validate =[];    % Validation function
-        plg@neurostim.plugin; % Handle to the plugin that this belongs to.
-        hDynProp;  % Handle to the dynamic property
+        funStr = '';                % The neurostim function string
+        validate =[];               % Validation function
+        plg@neurostim.plugin;       % Handle to the plugin that this belongs to.
+        hDynProp;                   % Handle to the dynamic property
         
     end
     
@@ -76,6 +75,20 @@ classdef parameter < handle & matlab.mixin.Copyable
             %
             % Create a parameter for a plugin/stimulu with a name and a value.
             % This is called from plugins.addProperty
+            
+            %Handle post-hoc construction from loadobj()
+            if isstruct(p)
+               f = intersect(properties(o),fieldnames(p));
+               for i=1:numel(f)
+                   o.(f{i}) = p.(f{i});
+               end
+               return 
+            elseif isa(p,'neurostim.parameter')
+                o=p;
+                return;
+            end
+
+            %Regular construction
             o.name = nm;
             o.plg = p; % Handle to the plugin
             o.hDynProp  = h; % Handle to the dynamic property
@@ -85,6 +98,15 @@ classdef parameter < handle & matlab.mixin.Copyable
             setupDynProp(o,options);
             % Set the current value. This logs the value (and parses the
             % v if it is a neurostim function string)
+            
+            %Deal with special case of empty vector. Won't be logged now unless we do something
+            %because the new value (v) matches the current value (o.value). So, we temporarily
+            %set it to something weird so that storeInLog() finds no match and hence logs it.
+            if isempty(v)
+               o.value = {'this is a highly unlikely value that will no be logged anyway'}; 
+            end
+            
+            %Set it and log it
             setValue(o,[],v);
         end
         
@@ -126,7 +148,7 @@ classdef parameter < handle & matlab.mixin.Copyable
         end
         
         
-        function storeInLog(o,v)
+        function storeInLog(o,v,t)
             % Store and Log the new value for this parm
             
             % Check if the value changed and log only the changes. 
@@ -158,7 +180,7 @@ classdef parameter < handle & matlab.mixin.Copyable
                 v = getValue(v);
             end
             o.log{o.cntr}  = v;
-            o.time(o.cntr) = GetSecs*1000; % Avoid the function call to cic.clockTime
+            o.time(o.cntr) = t; % Avoid the function call to cic.clockTime
         end
         
         function v = getValue(o,~)
@@ -169,12 +191,16 @@ classdef parameter < handle & matlab.mixin.Copyable
                  % The dynamic property defined with a function uses this as its GetMethod
                 v=o.fun(o.funPrms);
                 %The value might have changed, so allow it to be logged if need be
-                storeInLog(o,v);
+                t = GetSecs*1000;
+                storeInLog(o,v,t);
             end
         end
         
         function setValue(o,~,v)
-           
+            
+            %Check the clock immediately. If we need to log, this is the most accurate time-stamp.
+            t = GetSecs*1000;
+            
             %Check for a function definition
             if strncmpi(v,'@',1)
                 % The dynprop was set to a neurostim function
@@ -208,7 +234,7 @@ classdef parameter < handle & matlab.mixin.Copyable
                 o.validate(v);
             end
             % Log the new value
-            storeInLog(o,v);
+            storeInLog(o,v,t);
         end
   
                 
@@ -265,9 +291,10 @@ classdef parameter < handle & matlab.mixin.Copyable
         function [data,trial,trialTime,time,block] = get(o,varargin)
             % Usage example:
             %     [data,trial,trialTime,time,block] = get(c.dots.prms.Y,'atTrialTime',Inf)
+            %     data = get(c.dots.prms.Y,'struct',true)
             %
-            % For any parameter, returns up to five vectors specifying
-            % the values of the parameter during the experiment:
+            % For any parameter, returns up to five vectors (or a struct with five fields)
+            % specifying the values of the parameter during the experiment:
             %
             % data = values
             % trial = trial in which that value occurred
@@ -275,7 +302,7 @@ classdef parameter < handle & matlab.mixin.Copyable
             % time  = time relative to start of the experiment
             % block = the block in which this trial occurred.
             %
-            %   Optional input arguments as param/value pairs:
+            % Optional input arguments as param/value pairs:
             %
             % 'atTrialTime'   - returns exactly one value for each trial
             % that corresponds to the value of the parameter at that time in
@@ -285,13 +312,15 @@ classdef parameter < handle & matlab.mixin.Copyable
             % after this event.
             % 'trial'  - request only entries occuring in this set of
             % trials.
+            % 'struct' - set to true to return all outputs as a data structure
             %
             p =inputParser;
             p.addParameter('atTrialTime',[],@isnumeric); % Return values at this time in the trial
             p.addParameter('after','',@ischar); % Return the first value after this event in the trial
             p.addParameter('trial',[],@isnumeric); % Return only values in these trials
             p.addParameter('withDataOnly',false,@islogical); % Only those values that have data
-            
+            p.addParameter('struct',false,@islogical); % Pack the output arguments into a structure.
+           
             p.parse(varargin{:});
             
             data = o.log(1:o.cntr);
@@ -413,6 +442,9 @@ classdef parameter < handle & matlab.mixin.Copyable
                 trialTime(out)=[];
             end
             
+            if p.Results.struct
+                data = struct('data',data,'trial',trial,'trialTime',trialTime,'time',time,'block',block);
+            end
         end
         
         
@@ -497,6 +529,18 @@ classdef parameter < handle & matlab.mixin.Copyable
             
         end
         
+        function o = loadobj(o)
+           %Parameters that were initialised to [] and remained empty were not logged properly
+           %on construction in old files. Fix it here
+           if ~o.cntr
+               o.cntr = 1;
+               o.log{1} = [];
+               o.time = -Inf;
+           end
+
+           o = neurostim.parameter(o);
+        end
+
     end
     
     

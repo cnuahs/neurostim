@@ -23,6 +23,7 @@ classdef cic < neurostim.plugin
         clear@double            = 1;   % Clear backbuffer after each swap. double not logical
         itiClear@double         = 1;    % Clear backbuffer during the iti. double. Set to 0 to keep the last display visible during the ITI (e.g. a fixation point)
         fileOverwrite           = false; % Allow output file overwrite.
+        useConsoleColor         = false; % Set to true to allow plugins and stimuli use different colors to write to the console. There is some time-cost to this (R2018a), hence the default is false.
         saveEveryN              = 10;
         saveEveryBlock          = false;
         keyBeforeExperiment     = true;
@@ -43,8 +44,7 @@ classdef cic < neurostim.plugin
             'frameSlack',0.1,... % Allow x% slack of the frame in screen flip time.
             'pluginSlack',0); % see plugin.m
         
-        flipTime;   % storing the frame flip time.
-        getFlipTime@logical = false; %flag to notify whether to get the frame flip time.
+        flipCallbacks={}; %List of stimuli that have requested to be to called immediately after the flip, each as s.postFlip(flipTime).
         guiFlipEvery=[]; % if gui is on, and there are different framerates: set to 2+
         guiOn@logical=false; %flag. Is GUI on?
         mirror =[]; % The experimenters copy
@@ -392,7 +392,6 @@ classdef cic < neurostim.plugin
         function setPropsToInform(c,varargin)
             c.propsToInform = varargin;
         end
-        
         
         function showDesign(c,factors)
             if nargin<2
@@ -989,7 +988,6 @@ classdef cic < neurostim.plugin
                         if c.frame == 1
                             locFIRSTFRAMETIME = ptbStimOn*1000; % Faster local access for trialDuration check
                             c.firstFrame = locFIRSTFRAMETIME;% log it
-                            c.flipTime=0;
                         else
                             if missed>ITSAMISS
                                 c.frameDrop = [c.frame-1 missed]; % Log frame and delta
@@ -999,9 +997,13 @@ classdef cic < neurostim.plugin
                             end
                         end
                         
-                        if c.getFlipTime
-                            c.flipTime = ptbStimOn*1000-locFIRSTFRAMETIME;% Used by stimuli to log their onset
-                            c.getFlipTime=false;
+                        
+                        %Stimuli should set and log their onsets/offsets as soon as they happen, in case other
+                        %properties in any afterFrame() depend on them. So, send the flip time those who requested it
+                        if ~isempty(c.flipCallbacks)
+                            flipTime = ptbStimOn*1000-locFIRSTFRAMETIME;
+                            cellfun(@(s) s.afterFlip(flipTime),c.flipCallbacks);
+                            c.flipCallbacks = {};
                         end
                         
                         % The current frame has been flipped. Process
@@ -1018,6 +1020,7 @@ classdef cic < neurostim.plugin
                         Screen('FillRect', c.overlayWindow,0,locOVERLAYRECT); % Fill with zeros
                     end
                     c.trialStopTime = ptbStimOn*1000;
+                    
                     c.frame = c.frame+1;
                     
                     afterTrial(c);
@@ -1132,6 +1135,10 @@ classdef cic < neurostim.plugin
         
         %% GUI Functions
         function feed(c,style,formatSpecs,varargin)
+            if ~c.useConsoleColor
+                style = 'NOSTYLE';                
+            end
+               
             if numel(varargin)==2 && iscell(varargin{2})
                 % multi line message
                 maxChars = max(cellfun(@numel,varargin{2}));
@@ -1903,6 +1910,12 @@ classdef cic < neurostim.plugin
         function elapsed = toc(c)
             elapsed = GetSecs*1000 - c.ticTime;
         end
+    end
+    
+    methods (Access = {?neurostim.stimulus})
+        function addFlipCallback(o,s)
+            o.flipCallbacks = horzcat(o.flipCallbacks,{s});
+        end      
     end
     
     
