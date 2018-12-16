@@ -1784,6 +1784,8 @@ classdef cic < neurostim.plugin
                     % restore the color range setting
                     Screen('ColorRange', c.mainWindow, colorRange);
                       
+                    c.overlayRect = Screen('Rect',c.overlayWindow)-[c.screen.xpixels/2 c.screen.ypixels/2 c.screen.xpixels/2 c.screen.ypixels/2]; % need this to clear with FillRect()
+                    
                     % retrieve low-level OpenGl texture handle for the overlay window
                     overlayTexture = Screen('GetOpenGLTexture', c.mainWindow, c.overlayWindow);
   
@@ -1834,6 +1836,8 @@ classdef cic < neurostim.plugin
                     Screen('HookFunction', c.mainWindow, 'Reset', 'FinalOutputFormattingBlit');
                     Screen('HookFunction', c.mainWindow, 'AppendShader', 'FinalOutputFormattingBlit', idString, shader, pString);
                     PsychColorCorrection('ApplyPostGLSLLinkSetup', c.mainWindow, 'FinalFormatting');
+                    
+                    c.textWindow = c.overlayWindow;
                     
                     % setup CLUTs...
                     updateOverlay(c,c.screen.overlayClut);
