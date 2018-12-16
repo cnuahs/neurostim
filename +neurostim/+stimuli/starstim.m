@@ -164,7 +164,9 @@ classdef starstim < neurostim.stimulus
     end
     
     methods % Public
-        
+        function o= loadobj(o)
+            o.mustExit = false;
+        end
         function abort(o)
             stop(o);
         end
@@ -177,7 +179,7 @@ classdef starstim < neurostim.stimulus
             if o.fake
                 return;
             end
-            if o.mustExit
+           if o.mustExit
                 onExit(o);
             end
         end
@@ -209,6 +211,7 @@ classdef starstim < neurostim.stimulus
             o.addProperty('sham',false);
             o.addProperty('shamDuration',0); % 0 ms means rampup, and immediately ramp down.
             o.addProperty('enabled',true);
+            o.addProperty('montage',ones(1,o.NRCHANNELS));%
             
             
             o.addProperty('marker',''); % Used to log markers sent to NIC
@@ -433,7 +436,7 @@ classdef starstim < neurostim.stimulus
             else
                 MatNICMarkerCloseLSL(o.markerStream);
                 o.markerStream = [];
-                close(o.sock);
+                close(o)
             end
             o.writeToFeed('Stimulation done. Connection with Starstim closed');
             
@@ -476,9 +479,9 @@ classdef starstim < neurostim.stimulus
             end
         end
         
-        function v = perChannel(o,v)
+        function v = perChannel(o,v)            
             if isscalar(v)
-                v = v*ones(1,o.NRCHANNELS);
+                v = v*o.montage;
             end
         end
         
@@ -497,9 +500,9 @@ classdef starstim < neurostim.stimulus
                 case 'TACS'
                     msg{1} = sprintf('Ramping tACS up in %d ms to:',o.transition);
                     msg{2} = sprintf('\tCh#%d',1:o.NRCHANNELS);
-                    msg{3} = sprintf('\t%d mA',o.amplitude);
-                    msg{4} = sprintf('\t%d Hz',o.frequency);
-                    msg{5} = sprintf('\t%d o ',o.phase);
+                    msg{3} = sprintf('\t%d mA',perChannel(o,o.amplitude));
+                    msg{4} = sprintf('\t%d Hz',perChannel(o,o.frequency));
+                    msg{5} = sprintf('\t%d o ',perChannel(o,o.phase));
                     if ~o.fake                                                                         
                         [ret] = MatNICOnlinetACSChange(perChannel(o,o.amplitude), perChannel(o,o.frequency), perChannel(o,o.phase), o.NRCHANNELS, o.transition, o.sock);                        
                         o.checkRet(ret,msg);
@@ -667,7 +670,7 @@ classdef starstim < neurostim.stimulus
                 delete(timrs)
             end
             unloadProtocol(o);
-            close(o.sock);
+            close(o)            
             o.mustExit = false;
         end
         
@@ -686,7 +689,12 @@ classdef starstim < neurostim.stimulus
                 end
                 pause(0.025); % Check status every 25 ms.
                 if toc> TIMEOUT
-                    warning(['Waiting for ' varargin{cntr} ' timed out']);
+                    if iscell(varargin{cntr})
+                        stts = [varargin{cntr}{:}];
+                    else
+                        stts = varargin{cntr};
+                    end
+                    warning(['Waiting for ' stts ' timed out']);
                     warning(['Last status was ' o.protocolStatus ]);
                     break;
                 end
@@ -727,7 +735,7 @@ classdef starstim < neurostim.stimulus
             minF = max(o.frequency,0.01); % Lowest frequency 0.01Hz.
             t = repmat((0:0.1:(1/minF))',[1 o.NRCHANNELS]); % One cycle for all.                            
             nrT = size(t,1);
-            acCurrent = repmat(o.amplitude,[nrT 1]).*sin(pi/180*repmat(perChannel(o,o.phase),[nrT 1]) + 2*pi*t.*repmat(perChannel(o,o.frequency),[nrT,1]));
+            acCurrent = repmat(perChannel(o,o.amplitude),[nrT 1]).*sin(pi/180*repmat(perChannel(o,o.phase),[nrT 1]) + 2*pi*t.*repmat(perChannel(o,o.frequency),[nrT,1]));
             currentThreshold = 1;% 1 muA excess is probably an error
             if any(abs(sum(acCurrent,2))>currentThreshold)
                 o.cic.error('STOPEXPERIMENT','AC Current not conserved. Please check starstim.amplitude , .frequency , and .phase numbers');
@@ -738,6 +746,14 @@ classdef starstim < neurostim.stimulus
             if dcCurrent> currentThreshold
                 o.cic.error('STOPEXPERIMENT','DC Current not conserved. Please check starstim.mean');
                 ok = false;
+            end
+        end
+        
+        function close(o)
+            % Close connection with NIC
+            if isa(o.sock,'java.net.Socket')
+                close(o.sock)                
+                %else probably failed to create a sock...or fake
             end
         end
     end
