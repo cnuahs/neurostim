@@ -113,14 +113,14 @@ switch computerName
         c.timing.frameSlack = 0.1;
         c.eye.sampleRate  = 250;
         c.useConsoleColor = true;
-   case 'PTB-P-UBUNTU'
+    case 'PTB-P-UBUNTU'
         c = rig(c,'keyboardNumber',[],'eyelink',pin.Results.eyelink,'outputdir','c:/temp/','mcc',false,'xpixels',1920,'ypixels',1080,'screenWidth',52,'frameRate',120,'screenNumber',1);
         
         c.screen.colorMode = 'RGB';            
         smallWindow = false;      
         c.eye.sampleRate  = 250;
-  case 'PC2017A'
-        scrNr = 1;%max(Screen('screens'));
+    case 'PC2017A'
+        scrNr = max(Screen('screens'));
         fr = Screen('FrameRate',scrNr);
         rect = Screen('rect',scrNr);
         c = rig(c,'xpixels',rect(3),'ypixels',rect(4),'screenWidth',42,'frameRate',max(fr,60),'screenNumber',scrNr);
