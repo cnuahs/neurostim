@@ -9,7 +9,7 @@ classdef mcc < neurostim.plugin
     % 
     % AM: I had to configure the ports as "output" for digitalOut() to
     %     work, e.g.
-    %       err=DaqDConfigPort(c.mcc.daq,0,0); % port A as output
+    %       err = DaqDConfigPort(c.mcc.daq,0,0); % port A as output
     % SC: added test to identify the correct HID interface on Linux
     %
     % Recording Analog data:
@@ -65,7 +65,7 @@ classdef mcc < neurostim.plugin
     methods
         function reset(o)
             DaqReset(o.daq);
-        end 
+        end
         
         function o = mcc(c,varargin)
             % By default we use the first (often the only) available MCC
@@ -80,14 +80,14 @@ classdef mcc < neurostim.plugin
             p.addParameter('serialNumber','');
             p.parse(varargin{:})
             args = p.Results;
-
-            o  = o@neurostim.plugin(c,'mcc');
+ 
+            o = o@neurostim.plugin(c,'mcc');
             
             o.addProperty('aInOptions',[]);
             o.addProperty('aInData',[]);
             o.addProperty('aInStartTime',[]);
             o.addProperty('aInTimeOut',1); % Timeout for Analaog In in seconds.
-                        
+
             % check what is there...
             o.devices = PsychHID('Devices');
             
@@ -126,7 +126,6 @@ classdef mcc < neurostim.plugin
                 DaqAInScanBegin(o.daq,o.aInOptions); % Not storing parms return to make sure data and parms always match                               
             end
         end
-        
         
         function afterExperiment(o)
              if o.aIn                          
