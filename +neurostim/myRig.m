@@ -164,3 +164,4 @@ end
 c.screen.color.background = [0.25 0.25 0.25];
 c.iti = 500;
 c.trialDuration = 500;
+
