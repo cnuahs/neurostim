@@ -31,6 +31,7 @@ classdef cic < neurostim.plugin
         keyBeforeExperiment     = true;
         keyAfterExperiment      = true;
         beforeExperimentText    = 'Press any key to start...'; % Shown at the start of an experiment
+        afterExperimentText     = 'This is the end...';
         screen                  = struct('xpixels',[],'ypixels',[],'xorigin',0,'yorigin',0,...
             'width',[],'height',[],...
             'color',struct('text',[1 1 1],...
@@ -139,12 +140,16 @@ classdef cic < neurostim.plugin
         nrTrialsTotal;   % Number of trials total (all blocks)
         date;           % Date of the experiment.
         blockDone;      % Is the current block done?
+        hasValidWindow; % Is the Main Window valid? 
     end
     
     %% Public methods
     % set and get methods for dependent properties
     methods
-        
+        function v = get.hasValidWindow(c)
+            v = Screen(c.mainWindow,'WindowKind')>0;
+        end
+            
         function v = get.blockDone(c)
             v = c.blocks(c.block).done;
         end
@@ -919,6 +924,9 @@ classdef cic < neurostim.plugin
             KbQueueCreate(c); % After plugins have completed their beforeExperiment (to addKeys)
             c.drawFormattedText(c.beforeExperimentText);            
             Screen('Flip', c.mainWindow);            
+            
+            sanityChecks(c);
+            
             if c.keyBeforeExperiment; KbWait(c.kbInfo.pressAnyKey);end
             clearOverlay(c,true);
          
@@ -1094,7 +1102,7 @@ classdef cic < neurostim.plugin
             c.stopTime = now;
             Screen('Flip', c.mainWindow,0,0);% Always clear, even if clear & itiClear are false
             clearOverlay(c,true);               
-            c.drawFormattedText('This is the end...');
+            c.drawFormattedText(c.afterExperimentText);
             Screen('Flip', c.mainWindow);
             
             base(c.pluginOrder,neurostim.stages.AFTEREXPERIMENT,c);
@@ -1599,7 +1607,18 @@ classdef cic < neurostim.plugin
     end
     
     methods (Access=private)
-         
+        function sanityChecks(c)
+           % This function is called just before starting the first trial, whic his kist
+            % after running beforeExperiment in all plugins. It serves to
+            % do some error checking and provide the user with information
+            % on what is about to happen.
+            
+            % Plugin order
+            disp(['================ ' c.file ' =============================='])
+            disp('Plugin/Stimulus code will be evaluated in the following order:')
+            fprintf(1,'%s --> ', c.pluginOrder.name)
+            disp('Parameter plugins should depend only on plugins with earlier execution (i.e. to the left)');             
+        end
         function KbQueueStop(c)
             for kb=1:numel(c.kbInfo.activeKb)
                 KbQueueStop(c.kbInfo.activeKb{kb});
@@ -1885,9 +1904,31 @@ classdef cic < neurostim.plugin
         function v = clockTime
             v = GetSecs*1000;
         end
+                                
+        function o = loadobj(o)
+           % If the last trial does not reach firstFrame, then
+           % the trialTime (which is relative to firstFrame) cannot be calculated 
+           % This happens, for instance, when endExperiment is called by a plugin 
+           % during an ITI.
+           
+           % Add a fake firstFrame to fix this.
+           lastTrial = o.prms.trial.cntr-1; % trial 0 is logged as well, so -1
+           nrFF = o.prms.firstFrame.cntr-1;
+           if nrFF > 0 && lastTrial == nrFF +1 
+                    % The last trial did not make it to the firstFrame event. 
+                    % generate a fake firstFrame.
+                    t = [o.prms.firstFrame.log{:}];
+                    mTimeBetweenFF = median(diff(t));
+                    fakeFF = t(end) + mTimeBetweenFF;
+                    storeInLog(o.prms.firstFrame,fakeFF,NaN)
+            end
+                        
+        end
     end
     
     methods
+        
+        
         function report(c)
             %% Profile report
             plgns = fieldnames(c.profile);
