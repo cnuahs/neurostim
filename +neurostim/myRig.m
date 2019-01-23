@@ -99,6 +99,8 @@ switch computerName
         c.screen.colorMode = 'RGB';
         Screen('Preference', 'SkipSyncTests', 2); % Not in production mode; this is just to run without requiring accurate timing.
         smallWindow = false;
+        c.useConsoleColor = true;
+        c.hardware.keyEcho  = true;
     case '2014C'
         % Presentation computer
        c = rig(c,'eyelink',false,'outputdir','c:/temp/','mcc',false,'xpixels',1920,'ypixels',1080,'screenWidth',133,'screenHeight',75, 'frameRate',60,'screenNumber',1);
@@ -126,7 +128,8 @@ switch computerName
         c = rig(c,'xpixels',rect(3),'ypixels',rect(4),'screenWidth',42,'frameRate',max(fr,60),'screenNumber',scrNr);
         c.useConsoleColor = true;
         %Screen('Preference', 'SkipSyncTests', 2);
-        smallWindow = false;
+        smallWindow = true;
+        c.hardware.keyEcho = true;
         
     case 'NEUROSTIMA2018'
         scrNr = max(Screen('screens'));
