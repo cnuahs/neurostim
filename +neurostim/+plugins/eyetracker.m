@@ -18,8 +18,6 @@ classdef eyetracker < neurostim.plugin
     properties (Access=public)
         useMouse@logical=false;
         keepExperimentSetup@logical=true;
-        eye@char='LEFT'; %LEFT,RIGHT, or BOTH
-      
     end
     
     properties
