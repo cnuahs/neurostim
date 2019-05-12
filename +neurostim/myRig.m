@@ -25,10 +25,9 @@ end
 c.dirs.output = tempdir; % Output files will be stored here.
 
 switch computerName
-    case {'MU00101417X','ns2'}
-        % Shaun's MacBook Pro and marmolab rig #1
+    case {'MU00101417X','NS2','NS3'}
+        % Shaun's MacBook Pro, Marmolab Rig #1 (NS2) and the Psychophysics rig (NS3)
         c = marmolab.rigcfg();
-        return
         
     case 'MU00043185'
         %Office PC
@@ -197,7 +196,7 @@ switch computerName
         smallWindow = false;
     case 'ROOT-PC'
         c = rig(c,'xpixels',1280,'ypixels',1024,'screenWidth',40,'frameRate',85,'screenNumber',max(Screen('screens')));
-        smallWindow = false;    
+        smallWindow = false;
     otherwise
         warning('a:b','This computer (%s) is not recognised. Using default settings.\nHint: edit neurostim.myRig to prevent this warning.',computerName);
         scrNr = max(Screen('screens'));
