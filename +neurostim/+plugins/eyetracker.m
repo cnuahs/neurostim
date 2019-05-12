@@ -49,15 +49,13 @@ classdef eyetracker < neurostim.plugin
             o.addKey('w','Toggle Blink');
             o.tmr = timer('name','eyetracker.blink','startDelay',200/1000,'ExecutionMode','singleShot','TimerFcn',{@o.openEye});
 
-            o.addProperty('clbMatrix',[],'sticky',true); % manual calibration matrix (optional)
+            o.addProperty('clbMatrix',[],'sticky',true); % local calibration matrix (optional)
         end
         
         function afterFrame(o)
             if o.useMouse
                 [currentX,currentY,buttons] = o.cic.getMouse;
                 if buttons(1) || o.continuous
-                    [currentX,currentY] = o.raw2ns(currentX,currentY);
-                    
                     o.x=currentX;
                     o.y=currentY;
                 end
@@ -80,48 +78,53 @@ classdef eyetracker < neurostim.plugin
             writeToFeed(o,'Blink Ends')
         end
         
-        % Helper functions to transform eye sample data to screen
-        % pixels... any eye tracker can achieve the rescaling to screen
-        % pixels that they require (e.g., from camera pixels in the
-        % case of the eyelink raw data, or from normalized coords in the
-        % case of the Arrington) by defining the appropriate clbMatrix.
+        % Helper functions to transform eye sample data to/from neurostim's
+        % physical coords.
+        %
+        % Any eye tracker can achieve the rescaling to screen pixels that
+        % they require (e.g., from camera pixels in the case of the Eyelink
+        % raw/pupil data, or from normalized coords in the case of the
+        % Arrington eye tracker) by defining the appropriate o.clbMatrix.
         %
         % Other transformations (offset/translation, scaling or even
         % rotation) are also possible if required/desired, for example to
-        % implement automatic on-the-fly adjustment of eye calibration.
+        % implement local calibration or automatic on-the-fly adjustment
+        % of eye calibration.
         %
-        % These reoutines can also be used when reading eyetracker data for
+        % These functions can also be used when loading eye data for
         % analysis, ensuring that the transformations applied on- and
         % off-line are identical.
         
-        function [x,y] = raw2px(o,x,y,cm)
+        function [nx,ny] = raw2ns(o,x,y,cm)
           if nargin < 4
             cm = o.clbMatrix;
           end
           
-          if isempty(cm)
-            return % pass through
+          if ~isempty(cm)
+            % apply local calibration/transformation matrix
+            xy = [x,y,ones(size(x))]*cm;
+          
+            x = xy(:,1);
+            y = xy(:,2);
           end
           
-          xy = [x,y,ones(size(x))]*cm;
-          
-          x = xy(:,1);
-          y = xy(:,2);
+          [nx,ny] = o.cic.pixel2Physical(x,y);
         end
         
-        function [x,y] = px2raw(o,x,y,cm)
+        function [x,y] = ns2raw(o,nx,ny,cm)
           if nargin < 4
             cm = o.clbMatrix;
           end
           
-          if isempty(cm)
-            return % pass through
-          end
-                    
-          xy = [x,y,ones(size(x))]/cm;
+          [x,y] = o.cic.physical2Pixel(nx,ny);
           
-          x = xy(:,1);
-          y = xy(:,2);
+          if ~isempty(cm)
+            % invert local calibration/transformation matrix
+            xy = [x,y,ones(size(x))]/cm;
+          
+            x = xy(:,1);
+            y = xy(:,2);
+          end
         end
         
     end
