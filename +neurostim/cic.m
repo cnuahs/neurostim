@@ -1070,12 +1070,13 @@ classdef cic < neurostim.plugin
                             missed  = (ptbVbl-frameDeadline); % Positive is too late (i.e. a drop)
                         end
                         
-                        if locPROFILE && c.frame > 1
-                            addProfile(c,'FRAMELOOP','cic',c.toc);
-                            tic(c)
-                            addProfile(c,'FLIPTIME','cic',1000*(GetSecs-startFlipTime));
+                        if locPROFILE 
+                            if c.frame > 1
+                                addProfile(c,'FRAMELOOP','cic',c.toc);
+                                addProfile(c,'FLIPTIME','cic',1000*(GetSecs-startFlipTime));
+                            end
+                            tic(c); % <-- this should happen on every frame if we're profiling, even on o.frame = 1
                         end
-                        
                         
                         % Predict next frame and check frame drops
                         frameDeadline = ptbVbl+ FRAMEDURATION;
@@ -1974,20 +1975,38 @@ classdef cic < neurostim.plugin
                 figure('Name','Total','position',[680   530   818   420]);
                 clf
                 frameItems = find(~cellfun(@isempty,strfind(items,'FRAME')));
-                cntr=1;
+                cntr=1; totals = {};
                 for j=frameItems'
-                    subplot(1,2,cntr);
+                    subplot(1,numel(frameItems)+1,cntr);
                     total = cat(1,vals{2:end,j});
                     total =sum(total);
                     out =isinf(total) | isnan(total);
                     total = min(total(~out),MAXDURATION);
+                    
                     histogram(total,100);
                     xlabel 'Time (ms)'; ylabel '#'
                     title(horzcat(items{j},'; Median = ', num2str(round(nanmedian(total)))));
-                    cntr = cntr+1;
+
                     hold on
                     plot(1000./c.screen.frameRate*ones(1,2),ylim,'r')
+                    xlim([0, 0.5*MAXDURATION]);
+                    
+                    
+                    totals{cntr} = total;
+                    
+                    cntr = cntr+1;
                 end
+                
+                total = sum(cat(1,totals{:}));
+                
+                subplot(1,numel(frameItems)+1,cntr);
+                histogram(total,100);
+                xlabel 'Time (ms)'; ylabel '#'
+                title(horzcat('TOTAL; Median = ', num2str(round(nanmedian(total))),'(',num2str(max(total(:))),')'));
+
+                hold on
+                plot(1000./c.screen.frameRate*ones(1,2),ylim,'r')
+                xlim([0, 0.5*MAXDURATION]);
             end
             %% Framedrop report 
             [val,tr,ti,eTi] = get(c.prms.frameDrop,'atTrialTime',[]); %#ok<ASGLU>
