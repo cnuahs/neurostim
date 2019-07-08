@@ -41,7 +41,7 @@ classdef parameter < handle & matlab.mixin.Copyable
     %
     
     properties (Constant)
-        BLOCKSIZE = 500; % Logs are incremented with this number of values.
+        BLOCKSIZE = 5000; % Logs are incremented with this number of values.
     end
     
     properties (SetAccess= {?neurostim.plugin}, GetAccess=  public)
