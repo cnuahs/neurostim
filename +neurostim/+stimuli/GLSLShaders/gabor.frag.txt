@@ -57,8 +57,8 @@ void main()
     /* Compute exponential hull for the gabor: */
     if (mask==1){
         /* Gabor mask : Sigma = [stdev */
-        ev = exp(-0.5*dot(pos, pos) / (sigma1 * sigma1));
-        alpha =1.0;
+        alpha = exp(-0.5*dot(pos, pos) / (sigma1 * sigma1));
+        ev =1.0;
     }else if (mask==2){
         /* Hard circular mask: sigmae = outer*/
         ev  = float(sqrt(dot(pos,pos))<=sigma1); 
