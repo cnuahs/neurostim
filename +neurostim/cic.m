@@ -1012,7 +1012,7 @@ classdef cic < neurostim.plugin
                             % We are going to the ITI.
                             c.flags.trial=false; % This will be the last frame.
                             clr = c.itiClear; % Do not clear this last frame if the ITI should not be cleared
-                        else
+                         else
                             clr = c.clear;
                         end
                         
@@ -1727,9 +1727,10 @@ classdef cic < neurostim.plugin
                 case 'LINLUT'
                     % Load a gamma table that linearizes each gun
                     % Dont do this for VPIXX etc. monitor types.(although this should work, LUM works better; not recommended).
-                    dac = ScreenDacBits(c.screen.number);
+                    dac = 10; %ScreenDacBits(c.screen.number);
                     iGamma = InvertGammaTable(c.screen.calibration.gammaInput,c.screen.calibration.gammaTable,2.^dac);
-                    Screen('LoadNormalizedGammaTable',c.screen.number,iGamma);
+%                     Screen('LoadNormalizedGammaTable',c.screen.number,iGamma);
+                    PsychImaging('AddTask', 'FinalFormatting', 'DisplayColorCorrection', 'LookupTable');
                 case 'LUM'
                     % The user specifies luminance values per gun as color.
                     % Calibrateed responses are based on the extended gamma
@@ -1748,7 +1749,6 @@ classdef cic < neurostim.plugin
                     % The user specifies "raw" RGB values as color
                     dac = 8;
                     Screen('LoadNormalizedGammaTable',c.screen.number,repmat(linspace(0,1,2^dac)',[1 3])); % Reset gamma
-                    PsychImaging('AddTask', 'FinalFormatting', 'DisplayColorCorrection', 'None');
                 otherwise
                     error(['Unknown color mode: ' c.screen.colorMode]);
             end
@@ -1893,6 +1893,7 @@ classdef cic < neurostim.plugin
             switch upper(c.screen.colorMode)
                 case 'LINLUT'
                     % Nothing to do.
+                    PsychColorCorrection('SetLookupTable', c.mainWindow, iGamma, 'FinalFormatting');
                 case 'LUM'
                     % Default gamma is set to 2.2. User can change in c.screen.calibration.gamma
                     PsychColorCorrection('SetEncodingGamma', c.mainWindow,1./c.screen.calibration.ns.gamma);
