@@ -25,9 +25,10 @@ end
 c.dirs.output = tempdir; % Output files will be stored here.
 
 switch computerName
-    case {'MU00101417X','NS2','NS3'}
+    case {'MU00101417X','ns2','ns3'}
         % Shaun's MacBook Pro, Marmolab Rig #1 (NS2) and the Psychophysics rig (NS3)
-        c = marmolab.rigcfg();
+        c = marmolab.rigcfg('debug',pin.Results.debug);
+        return
         
     case 'MU00043185'
         %Office PC
