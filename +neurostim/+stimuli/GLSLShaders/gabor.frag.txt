@@ -58,7 +58,7 @@ void main()
     if (mask==1){
         /* Gabor mask : Sigma = [stdev */
         alpha = exp(-0.5*dot(pos, pos) / (sigma1 * sigma1));
-        ev =1.0;
+        ev = 1.0;
     }else if (mask==2){
         /* Hard circular mask: sigmae = outer*/
         ev  = float(sqrt(dot(pos,pos))<=sigma1); 
@@ -98,10 +98,10 @@ void main()
         tev = sign(sin(flickerPhase));
     }else if (flickerMode ==4){
         /*sinusoidal contrast modulation*/
-        tev = 1+sin(flickerPhase);
+        tev = 1.0+sin(flickerPhase);
     }else if (flickerMode ==5){
         /* square wave contrast modualtion*/
-        tev = 1+sign(sin(flickerPhase));
+        tev = 1.0+sign(sin(flickerPhase));
     }else{
         /*throw an error - not a valid mode */
         tev =1.0;
@@ -118,7 +118,7 @@ void main()
         /* xyL */
         gl_FragColor[0] = color[0];
         gl_FragColor[1] = color[1];
-        gl_FragColor[2] = color[2] *factor;
+        gl_FragColor[2] = color[2] * factor;
         gl_FragColor[3] = alpha*color[3]; /* Not sure alpha makes sense in xyL mode */
     }
 }
