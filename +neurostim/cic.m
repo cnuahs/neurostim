@@ -1769,6 +1769,7 @@ classdef cic < neurostim.plugin
                     % The user specifies "raw" RGB values as color
                     dac = 8;
                     Screen('LoadNormalizedGammaTable',c.screen.number,repmat(linspace(0,1,2^dac)',[1 3])); % Reset gamma
+                    PsychImaging('AddTask', 'FinalFormatting', 'DisplayColorCorrection', 'None');
                 otherwise
                     error(['Unknown color mode: ' c.screen.colorMode]);
             end
