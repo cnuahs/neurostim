@@ -413,6 +413,7 @@ classdef cic < neurostim.plugin
             c.feedStyle = '*[0.9294    0.6941    0.1255]'; % CIC messages in bold orange
             
             %Build a set of RNG streams.
+            c.addProperty('RandStreamCreateSeed','shuffle'); %Used to set and store the seed used to create RNG streams
             createRNGstreams(c);
         end
         
@@ -1008,10 +1009,10 @@ classdef cic < neurostim.plugin
                         c.frame = c.frame+1;
                         
                         %% Check for end of trial
-                        if ~c.flags.trial || c.frame-1 >= ms2frames(c,c.trialDuration)  
-                            % if trial has ended (based on behaviors for
-                            % instance)
-                            % or if trialDuration has been reached, minus one frame for clearing screen
+                        if ~c.flags.trial || c.frame >= ms2frames(c,c.trialDuration)
+                            % if trial has ended (based on behaviors for instance)
+                            % or if trialDuration has been reached (the screen is cleared by a post-trial flip)
+                            
                             % We are going to the ITI.
                             c.flags.trial=false; % This will be the last frame.
                             clr = c.itiClear; % Do not clear this last frame if the ITI should not be cleared
@@ -1534,17 +1535,23 @@ classdef cic < neurostim.plugin
             end
         end
         
-        function createRNGstreams(c,nStreams,varargin)
+        function createRNGstreams(c,varargin)
             %Create a set of independent RNG streams for use across all plugins.
             %By default, all plugins, including cic, use a single global
             %stream. However, a plugin can request its own stream (e.g. as
             %currently done in noiseclut.m). See RandStream for info about
             %creating streams in matlab and why we handle this centrally.
             %All arguments in varargin are passed onto the Matlab's RandStream.create().
-            if nargin < 2
-               nStreams = 3; 
-            end
-            c.spareRNGstreams = RandStream.create('mrg32k3a','NumStreams',nStreams,'cellOutput',true,varargin{:});
+            %You could use the 'seed' argument to return CIC RNG streams to a
+            %previous state
+            p=inputParser;
+            p.addParameter('nStreams',3);       %We'll leave the argument validation to RandStream.
+            p.addParameter('seed','shuffle');
+            p.parse(varargin{:});
+            p = p.Results;
+           
+            c.spareRNGstreams = RandStream.create('mrg32k3a','NumStreams',p.nStreams,'seed',p.seed, 'cellOutput',true,varargin{:});
+            c.RandStreamCreateSeed = c.spareRNGstreams{1}.Seed; %All streams are built from the one seed, so we can just log the first one here.
             
             %Use the first as the current global stream and allocate it to CIC
             c.rng = c.spareRNGstreams{1};
