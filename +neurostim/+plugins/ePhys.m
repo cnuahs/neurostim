@@ -49,16 +49,8 @@ classdef (Abstract) ePhys < neurostim.plugin
             end
                         
             o.startRecording();
-            
-            sendMessage(o,o.startMsg);
-            
-            % I think mixing and matching the role of mccChannel is a bad
-            % idea... it should indicate start/end of the experiment or
-            % start/end of a trial, not both...
-%             if o.useMCC
-%                 o.cic.mcc.digitalOut(o.mccChannel,uint8(1));
-%                 o.cic.mcc.digitalOut(o.mccChannel,uint8(0));
-%             end
+                        
+            sendMessage(o,o.startMsg);            
         end 
         
         function beforeTrial(o)
@@ -84,12 +76,7 @@ classdef (Abstract) ePhys < neurostim.plugin
               sendMessage(o,o.stopMsg);
             end
             
-            stopRecording(o);  
-          
-%             if o.useMCC
-%                 o.cic.mcc.digitalOut(o.mccChannel,uint8(1));
-%                 o.cic.mcc.digitalOut(o.mccChannel,uint8(0));
-%             end
+            stopRecording(o);            
         end 
         
         function afterTrial(o)
@@ -116,17 +103,7 @@ classdef (Abstract) ePhys < neurostim.plugin
 
         % The following actions should be performed here:
         % Stop recording/acquisition, reset connectionStatus flag, send experiment end message
-        stopRecording(o)
-        
-%         function startTrial(~)
-%             % NOP 
-%             % Indicate the start of a trial with a string
-%         end 
-%         
-%         function stopTrial(~)
-%             % NOP 
-%             % Indicate the end of a trial with a string
-%         end        
+        stopRecording(o)        
     end 
     
 end
