@@ -99,7 +99,13 @@ classdef openEphys < neurostim.plugins.ePhys
             request = sprintf('StartRecord CreateNewDir=%i RecDir=%s PrependText=%s AppendText=%s', ...
                 o.createNewDir, o.recDir, o.prependText, o.appendText);
                                                                                                        
-            sendMessage(o,request); % Issue command to start recording            
+            sendMessage(o,request); % Issue command to start recording
+            
+            % wip: a short delay here to ensure recording has started before
+            %      we send any messages etc. to be recorded... I think this
+            %      should be fine since startRecording() is called in
+            %      beforeExperiment() where timing isn't critical 
+            pause(0.5);
         end 
         
         function stopRecording(o) 
