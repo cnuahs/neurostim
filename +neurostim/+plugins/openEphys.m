@@ -105,7 +105,7 @@ classdef openEphys < neurostim.plugins.ePhys
             %      we send any messages etc. to be recorded... I think this
             %      should be fine since startRecording() is called in
             %      beforeExperiment() where timing isn't critical 
-            pause(0.5);
+            pause(1.0);
         end 
         
         function stopRecording(o) 
