@@ -1,4 +1,4 @@
-function splittaskDemo
+function splittaskDemo(varargin)
 
 import neurostim.*
 commandwindow;
@@ -6,7 +6,7 @@ commandwindow;
 %% ========= Specify rig configuration  =========
 
 %Create a Command and Intelligence Centre object (the central controller for everything). Here a cic is returned with some default settings for this computer, if it is recognized.
-c = myRig;
+c = myRig(varargin{:});
 c.trialDuration = 5000;
 c.saveEveryN = Inf;
 
@@ -15,7 +15,7 @@ im=neurostim.stimuli.fourierFiltImage(c,'filt');
 
 im.bigFrameInterval = 12;
 im.imageDomain = 'FREQUENCY';
-im.size = [950,950];
+im.size = [800,800];
 %im.size = floor(im.size/60)*60; %Size should be a multiple of the frame rate.
 maskSD = 0.125;
 im.mask = ifftshift(normpdf(linspace(-1,1,im.size(1)),0,maskSD)'.*normpdf(linspace(-1,1,im.size(2)),0,maskSD));
