@@ -3,6 +3,7 @@ function c = myRig(varargin)
 %Convenience function to set up a CIC object with appropriate settings for the current rig/computer.
 %Feel free to add your PC/rig to the list
 pin = inputParser;
+pin.KeepUnmatched = true;
 pin.addParameter('smallWindow',false);   %Set to true to use a half-screen window
 pin.addParameter('bgColor',[0.25,0.25,0.25]);
 pin.addParameter('eyelink',false);
@@ -27,7 +28,7 @@ c.dirs.output = tempdir; % Output files will be stored here.
 switch computerName
     case {'MU00101417X','ns2','ns3'}
         % Shaun's MacBook Pro, Marmolab Rig #1 (NS2) and the Psychophysics rig (NS3)
-        c = marmolab.rigcfg('debug',pin.Results.debug);
+        c = marmolab.rigcfg('debug',pin.Results.debug,pin.Unmatched);
         return
         
     case 'MU00043185'

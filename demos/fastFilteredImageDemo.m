@@ -1,4 +1,4 @@
-function fastFilteredImageDemo
+function fastFilteredImageDemo(varargin)
 
 import neurostim.*
 commandwindow;
@@ -6,7 +6,7 @@ commandwindow;
 %% ========= Specify rig configuration  =========
 
 %Create a Command and Intelligence Centre object (the central controller for everything). Here a cic is returned with some default settings for this computer, if it is recognized.
-c = myRig;
+c = myRig(varargin{:});
 c.trialDuration = 1000;
 c.saveEveryN = Inf;
 
@@ -15,7 +15,7 @@ im=neurostim.stimuli.fastfilteredimage(c,'filtIm');
 im.bigFrameInterval = 2;
 im.imageDomain = 'FREQUENCY';
 im.size = [1024,1024];
-im.width = im.size(1)./c.screen.xpixels*c.screen.width;
+im.width = 2*im.size(1)./c.screen.xpixels*c.screen.width;
 im.height = im.width*im.size(1)/im.size(2);
 im.maskIsStatic = true;
 im.statsConstant = true;
