@@ -355,7 +355,7 @@ classdef fastfilteredimage < neurostim.stimuli.splittasksacrossframes
                 %Reconstruct the images by re-running the beforeTrial and beforeFrame tasks
                 arrayfun(@(tsk) do(tsk),o.beforeTrialTasks); 
                 nFrames = byTrial.nImagesComputed{t};
-                im{t} = nans(byTrial.size{t2ix('size',t)},nFrames+1); %plus 1 because from time zero until first big frame, our stimulus was not yet visible. So we'll leave a NaNs image in position 1.               
+                im{t} = nan(cat(2,byTrial.size{t2ix('size',t)},nFrames+1)); %plus 1 because from time zero until first big frame, our stimulus was not yet visible. So we'll leave a NaNs image in position 1.               
                 for f=1:nFrames
                     arrayfun(@(tsk) do(tsk),o.beforeFrameTasks);
                     im{t}(:,:,f+1)=o.dblImage_space;
