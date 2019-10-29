@@ -23,7 +23,7 @@ c.trialDuration = '@filtIm.on+filtIm.duration';
 c.saveEveryN = Inf;
 
 %% ============== Add stimuli ==================
-imDuration = 1000;
+imDuration = 5000;
 im=neurostim.stimuli.fastfilteredimage(c,'filtIm');
 im.on = 500;
 im.bigFrameInterval = 100; %ms
