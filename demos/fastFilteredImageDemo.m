@@ -37,7 +37,7 @@ im.statsConstant = true;
 im.optimise = true;
 im.showReport = false;
 %im.mask = gaussLowPassMask(im,24);
-im.mask = deformedAnnulusMask(im,'plot',false);
+im.mask = deformedAnnulusMask(im,'minSF',0.5,'maxSF',8.0,'plot',false);
 
 %Specify experimental conditions
 myDesign=design('myFac');                      %Type "help neurostim/design" for more options.
