@@ -19,25 +19,25 @@ commandwindow;
 
 %Create a Command and Intelligence Centre object (the central controller for everything). Here a cic is returned with some default settings for this computer, if it is recognized.
 c = myRig('cicConstructArgs',{'rngArgs',{'type','gpuCompatible'}},varargin{:}); %We need to use an RNG on the GPU
-c.trialDuration = '@filtIm.duration';
+c.trialDuration = '@filtIm.on+filtIm.duration';
 c.saveEveryN = Inf;
 
 %% ============== Add stimuli ==================
 imDuration = 1000;
 im=neurostim.stimuli.fastfilteredimage(c,'filtIm');
-im.bigFrameInterval = 50; %ms
+im.on = 500;
+im.bigFrameInterval = 100; %ms
 im.duration = imDuration + im.bigFrameInterval; %The image isn't actually shown until trialTime = im.bigFrameInterval, because first image is being computed, so this ensure that the visible part is on for imDuration
 im.imageDomain = 'FREQUENCY';
-im.size = [1024,1024];
-im.width = 2*im.size(1)./c.screen.xpixels*c.screen.width;
+im.size = [c.screen.ypixels,c.screen.xpixels/2]; % <-- /2 due to overlay
+im.width = c.screen.width;
 im.height = im.width*im.size(1)/im.size(2);
 im.maskIsStatic = true;
 im.statsConstant = true;
 im.optimise = true;
 im.showReport = false;
-im.mask = gaussLowPassMask(im,24);
-
-%im.mask = deformedAnnulusMask(im,'plot',false);
+%im.mask = gaussLowPassMask(im,24);
+im.mask = deformedAnnulusMask(im,'plot',false);
 
 %Specify experimental conditions
 myDesign=design('myFac');                      %Type "help neurostim/design" for more options.
@@ -48,5 +48,6 @@ myBlock=block('myBlock',myDesign);             %Create a block of trials using t
 myBlock.nrRepeats=1000;
 
 %% Run the experiment.
-c.subject = 'easyD';
+c.subject = 'diodetst';
+c.paradigm = 'fastFilteredImageDemo';
 c.run(myBlock);
