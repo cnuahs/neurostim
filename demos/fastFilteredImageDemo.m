@@ -24,6 +24,7 @@ c.saveEveryN = Inf;
 
 %% ============== Add stimuli ==================
 imDuration = 5000;
+<<<<<<< HEAD
 im=neurostim.stimuli.fastfilteredimage(c,'filtIm');
 im.on = 500;
 im.bigFrameInterval = 100; %ms
@@ -31,6 +32,16 @@ im.duration = imDuration + im.bigFrameInterval; %The image isn't actually shown 
 im.imageDomain = 'FREQUENCY';
 im.size = [c.screen.ypixels,c.screen.xpixels/2]; % <-- /2 due to overlay
 im.width = c.screen.width;
+=======
+
+im=neurostim.stimuli.fastfilteredimage(c,'filtIm');
+im.bigFrameInterval = 100; %ms
+im.on=500-im.bigFrameInterval; %Our image isn't actually visible until *after* the first full interval (during which time it is being computed)
+im.duration = imDuration + im.bigFrameInterval; %The image isn't actually shown until trialTime = im.bigFrameInterval, because first image is being computed, so this ensure that the visible part is on for imDuration
+im.imageDomain = 'FREQUENCY';
+im.size = [1024,1024];
+im.width = im.size(2)./c.screen.xpixels*c.screen.width;
+>>>>>>> upstream/splittask
 im.height = im.width*im.size(1)/im.size(2);
 im.maskIsStatic = true;
 im.statsConstant = true;
