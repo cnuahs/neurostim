@@ -68,10 +68,10 @@ classdef eyelink < neurostim.plugins.eyetracker
         el; %@struct;  % Information structure to communicate with Eyelink host
         commands = {'link_sample_data = GAZE'};
         edfFile = 'test.edf';
-        getSamples =true;
-        getEvents =false;
+        getSamples = true;
+        getEvents = false;
         nTransferAttempts = 5;
-        eyeNr=NaN; % Index variable for eye position
+%         eyeNr=NaN; % Index variable for eye position
 
         callbackFun = 'neurostimEyelinkDispatchCallback'; % Modified callback for overlay use on VPIXX and PsychPortAudio for sounds
         boostEyeImage = 0;  % Factor by which to boost the eye image on a LUM calibrated display. [Default 0 means not boosted. Try values above 1.]
@@ -292,7 +292,7 @@ classdef eyelink < neurostim.plugins.eyetracker
         end
         
         function afterExperiment(o)
-            if o.fake; afterExperiment@neurostim.plugins.eyetracker(o);return;end
+            if o.fake; afterExperiment@neurostim.plugins.eyetracker(o); return; end
             
             o.cic.drawFormattedText('Transfering data from Eyelink host, please wait.','ShowNow',true);
             Eyelink('StopRecording');
@@ -365,7 +365,7 @@ classdef eyelink < neurostim.plugins.eyetracker
             if ~o.isRecording
                 Eyelink('StartRecording');
                 available = Eyelink('EyeAvailable'); % get eye that's tracked
-                if available ==-1
+                if available == -1
                     % No eye
                     o.cic.error('STOPEXPERIMENT','eye not available')
                 else
@@ -384,8 +384,8 @@ classdef eyelink < neurostim.plugins.eyetracker
                 end
             end
 
-            % get the tracked eye for behavior in physical coordinates
-            o.eyeNr = str2eye(o,o.eye);            
+            % get the tracked eye for behavior
+            o.eyeNr = str2eye(o,o.eye) + 1;
 
             Eyelink('Command','record_status_message %s%s%s',o.cic.paradigm, '_TRIAL:',num2str(o.cic.trial));
             Eyelink('Message','%s',['TR:' num2str(o.cic.trial)]);   %will this be used to align clocks later?
@@ -396,10 +396,10 @@ classdef eyelink < neurostim.plugins.eyetracker
             % same value throughout the experiment?). Not fatal as we use
             % only the logged time in Neurostim to align, but strange.                        
         end
-        
-        function afterFrame(o)
-            if o.fake; afterFrame@neurostim.plugins.eyetracker(o);return;end
-              
+                
+        function getSample(o) % note: called by eyetracker.afterFrame()
+            if o.fake; return; end
+
             if o.getSamples
                 % Continuous samples requested
                 % get the sample in the form of an event structure
@@ -409,15 +409,21 @@ classdef eyelink < neurostim.plugins.eyetracker
                     % frame
                 else
                     if o.loc_useRawData
-                      % get raw camera (x,y) of pupil center and apply o.clbMatrix (see @eyetracker)
-                      [o.x,o.y] = o.raw2ns(sample.px(o.eyeNr+1),sample.py(o.eyeNr+1)); % eyeNr+1, since we're indexing a MATLAB array
+                        % get raw camera (x,y) of pupil center and apply o.clbMatrix (see @eyetracker)
+%                         [o.x,o.y] = o.raw2ns(sample.px(o.eyeNr+1),sample.py(o.eyeNr+1)); % eyeNr+1, since we're indexing a MATLAB array
+                        s.x = sample.px;
+                        s.y = sample.py;
                     else
-                      % get gaze position (in display pixels)
-                      [o.x,o.y] = o.raw2ns(sample.gx(o.eyeNr+1),sample.gy(o.eyeNr+1)); % eyeNr+1, since we're indexing a MATLAB array
+                        % get gaze position (in display pixels)
+%                         [o.x,o.y] = o.raw2ns(sample.gx(o.eyeNr+1),sample.gy(o.eyeNr+1)); % eyeNr+1, since we're indexing a MATLAB array
+                        s.x = sample.gx;
+                        s.y = sample.gy;
                     end
-                                        
-                    o.pupilSize = sample.pa(o.eyeNr+1);
-                    o.valid  = any(sample.gx(o.eyeNr+1)~=o.el.MISSING_DATA); % Blink or other missing data.
+
+                    s.parea = sample.pa;
+                    s.valid = sample.gx ~= o.el.MISSING_DATA; % Blink or other missing data.
+
+                    o.eyeSample = s;
                 end
             end
             if o.getEvents
@@ -428,21 +434,19 @@ classdef eyelink < neurostim.plugins.eyetracker
                         % endsacc event.
                         %                         [o.x,o.y] = o.mouseConnection(c);
                         eyeEvts = o.eyeEvts;
-                        [eyeEvts.gx,eyeEvts.gy,eyeEvts.type] = deal(x,y,o.el.ENDSACC);
+                        [eyeEvts.gx,eyeEvts.gy,eyeEvts.type] = deal(x,y,o.el.ENDSACC); % FIXME: how is this supposed to work?
                         o.eyeEvts = eyeEvts;
                     case o.el.connected
-                        evtype=Eyelink('getnextdatatype');
+                        evtype = Eyelink('getnextdatatype');
                         if any(ismember(evtype,[o.el.ENDSACC, o.el.ENDFIX, o.el.STARTBLINK,...
-                                o.el.ENDBLINK,o.el.STARTSACC,o.el.STARTFIX,...
-                                o.el.FIXUPDATE, o.el.INPUTEVENT,o.el.MESSAGEEVENT,...
-                                o.el.BUTTONEVENT, o.el.STARTPARSE, o.el.ENDPARSE]))
+                                                o.el.ENDBLINK, o.el.STARTSACC, o.el.STARTFIX,...
+                                                o.el.FIXUPDATE, o.el.INPUTEVENT, o.el.MESSAGEEVENT,...
+                                                o.el.BUTTONEVENT, o.el.STARTPARSE, o.el.ENDPARSE]))
                             o.eyeEvts = Eyelink('GetFloatData', evtype);
                         else
                             %                             o.cic.error('STOPEXPERIMENT','Eyelink is not connected');
                         end
                 end
-                % x and y
-                
             end
         end
         

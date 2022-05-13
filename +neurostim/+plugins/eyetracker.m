@@ -34,6 +34,8 @@ classdef eyetracker < neurostim.plugin
         eye = 'LEFT'; % LEFT or RIGHT
         binocular = false; % Set to true to request binocular eye tracking (see notes above)
 
+        eyeNr = 1; % index for eye data
+
         tmr; % @timer (for blink simulation)
         
         doTrackerSetupEachBlock = false % Return to tracker setup before the first trial of every block.
@@ -42,11 +44,14 @@ classdef eyetracker < neurostim.plugin
     end
     
     properties
-        x=NaN; % Should have default values, otherwise bhavior checking can fail.
-        y=NaN;
-        z=NaN;
+        x = NaN; % Should have default values, otherwise behavior checking can fail.
+        y = NaN;
+        z = NaN;
         pupilSize;
-        valid= true;  % valid=false signals a temporary absence of data (due to a blink for instance)
+       
+        valid = true;  % valid=false signals a temporary absence of data (due to a blink for instance)
+
+        eyeSample = struct('x',NaN,'y',NaN,'parea',NaN,'valid',true);        
     end
     
     properties (SetAccess={?neurostim.plugin}, GetAccess={?neurostim.plugin}, Hidden)
@@ -81,13 +86,15 @@ classdef eyetracker < neurostim.plugin
         end
         
         function afterFrame(o)
-            if o.useMouse
-                [currentX,currentY,buttons] = o.cic.getMouse;
-                if buttons(o.mouseButton) || o.continuous
-                    o.x=currentX;
-                    o.y=currentY;
-                end
-            end
+            % fetch the latest sample from the eye tracker and update
+            % fields (e.g., .x, .y) for online behaviors etc.
+            o.getSample();
+
+            s = o.eyeSample;
+            [o.x,o.y] = o.raw2ns(s.x(o.eyeNr),s.y(o.eyeNr));
+
+            o.pupilSize = s.parea(o.eyeNr);
+            o.valid = s.valid(o.eyeNr);
         end
         
         function keyboard(o,key)
@@ -105,7 +112,18 @@ classdef eyetracker < neurostim.plugin
             o.valid = true;
             writeToFeed(o,'Blink Ends')
         end
-        
+
+        function getSample(o)
+            s = o.eyeSample;
+            if o.useMouse
+                [currentX,currentY,buttons] = o.cic.getMouse;
+                if buttons(o.mouseButton) || o.continuous
+                    [s.x,s.y] = o.cic.physical2Pixel(currentX,currentY);
+                end
+            end
+            o.eyeSample = s;
+        end
+
         % Helper functions to transform eye sample data to/from neurostim's
         % physical coords.
         %
@@ -130,10 +148,14 @@ classdef eyetracker < neurostim.plugin
           
           if ~isempty(cm)
             % apply local calibration/transformation matrix
-            xy = [x,y,ones(size(x))]*cm;
-          
-            x = xy(:,1);
-            y = xy(:,2);
+%             xy = [x,y,ones(size(x))]*cm;
+            xy = [x,y,ones(size(x))];
+            for ii = 1:size(cm,3)
+              xy(:,:,ii) = xy(:,:,ii)*cm(:,:,ii);
+            end
+            
+            x = xy(:,1,:);
+            y = xy(:,2,:);
           end
           
           [nx,ny] = o.cic.pixel2Physical(x,y);
@@ -148,10 +170,14 @@ classdef eyetracker < neurostim.plugin
           
           if ~isempty(cm)
             % invert local calibration/transformation matrix
-            xy = [x,y,ones(size(x))]/cm;
+%             xy = [x,y,ones(size(x))]/cm;
+            xy = [x,y,ones(size(x))];
+            for ii = 1:size(cm,3)
+              xy(:,:,ii) = xy(:,:,ii)/cm(:,:,ii);
+            end
           
-            x = xy(:,1);
-            y = xy(:,2);
+            x = xy(:,1,:);
+            y = xy(:,2,:);
           end
         end
         
