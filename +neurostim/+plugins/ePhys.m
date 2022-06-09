@@ -21,6 +21,7 @@ classdef (Abstract) ePhys < neurostim.plugin
 
             % parse arguments...
             pin = inputParser;
+            pin.KeepUnmatched = true;
             pin.addParameter('hostAddr', '', @ischar);
             pin.addParameter('startMsg', '', @(x) ischar(x) || iscell(x)); 
             pin.addParameter('stopMsg', '', @(x) ischar(x) || iscell(x));
