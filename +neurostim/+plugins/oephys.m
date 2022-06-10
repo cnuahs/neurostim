@@ -15,10 +15,12 @@ classdef oephys < neurostim.plugins.ePhys
   %
   % Optional parameters may be specified via name-value pairs:
   %
-  %   recDir - directory used for saving data on the open ephys computer (default: '')
-  %   prependText - prefix for directory names in recDir (default: '')
-  %   appendText - suffix for directory names in recDir (default: '')
-  %   format - recording format (default: 'BINARY')
+  %   recordDir   - directory for saving data on the open ephys computer (default: '')
+  %   prependText - prefix for recording directory names in recordDir (default: '')
+  %   appendText  - suffix for recording directory names in recordDir (default: '')
+  %
+  %   signalChain - path to the open ephys signal chain .xml file on the
+  %                 open ephys computer (default: '')
   %
   % See also: neurostim.plugins.ePhys
   
@@ -43,11 +45,13 @@ classdef oephys < neurostim.plugins.ePhys
       % parse arguments
       p = inputParser;
       p.KeepUnmatched = true;
-      p.addParameter('recDir','',@ischar); % save path on the open ephys computer
+      p.addParameter('recordDir','',@ischar);
       p.addParameter('prependText','',@ischar);
       p.addParameter('appendText','',@ischar);
 
       p.addParameter('format','BINARY',@(x) ischar(x) && ismember(x,o.formats));
+
+      p.addParameter('signalChain','',@ischar);
 
       p.parse(varargin{:});
       
@@ -55,11 +59,13 @@ classdef oephys < neurostim.plugins.ePhys
       %
 
       % add class properties
-      o.addProperty('recDir',args.recDir,'validate',@ischar);
+      o.addProperty('recordDir',args.recordDir,'validate',@ischar);
       o.addProperty('prependText',args.prependText,'validate',@ischar);
       o.addProperty('appendText',args.appendText,'validate',@ischar);
 
       o.addProperty('format',args.format,'validate',@(x) ischar(x) && ismember(x,o.formats));
+
+      o.addProperty('signalChain',args.signalChain,'validate',@ischar);
     end
         
     function sendMessage(o,msg)
@@ -79,25 +85,47 @@ classdef oephys < neurostim.plugins.ePhys
     function startRecording(o)
       % Start RECORDing
 
+      if ~isempty(o.signalChain)
+        o.put('load',o.signalChain);
+      end
+
       % configure "global" recording information
-      config = struct('parent_directory',o.recDir,'prepend_text',o.prependText,'appendText',o.appendText,'format',o.format);
-      [~,status] = o.put('recording',config);
+      config = struct('prepend_state',2,'prepend_text',o.prependText,'append_text',o.appendText);
+      r = o.put('recording',config);
 
       % FIXME: 2022-06-09
-      %        do we need to specify these for each Record Node in the
-      %        signal chain? In testing, the global settings were not
-      %        inherited as the documentation claims they are.
+      %        do we need to specify parent_directory for each Record Node
+      %        in the signal chain? In testing, the global settings are NOT
+      %        inherited by the Record Nodes when recording starts.
       %
       %        Update: parent_directory is ignored if the directory does
-      %        not exist on the open ephys computer... 
+      %        not exist on the open ephys computer...
       %
-      %        Update: in fact, these settings don't seem to be honoured at
-      %        all... they appear in the recording config bar of the GUI
-      %        (sort of), but they get trashed when recording starts. It
-      %        doesn't seem to matter what mode the GUI is in (e.g., IDLE or
-      %        ACQUIRE), they never have any effect when recording starts. 
+      %        2022-06-10
+      %        parent_directory is only inherited by the Record Nodes when
+      %        they are added to the signal chain... i.e., in the RecordNode
+      %        constructor. wtf? what good is that?
+      %
+      %        to set the recording directory of each Record Node, PUT to
+      %        `/api/recording/<processor_id>`
+      %
+      %        prepend_text and append_text are inherited by the Record Nodes
+      %        when recording starts... at least, the Record Nodes honour
+      %        the generated directory name, that includes prepend_text and
+      %        append_text. 
+      %
+      %        It seems you cannot set the recording directory base name...
+      %        that is always determined by the .xml file (either AUTO or
+      %        CUSTOM)
+
+      for nodeId = [r.record_nodes.node_id]
+        o.put({'recording',num2str(nodeId)},struct('parent_directory',o.recordDir));
+      end
 
       [~,status] = o.put('status',struct('mode','RECORD'));
+
+      % FIXME: check response to ensure 'mode' *is* 'RECORD'
+
       o.connectionStatus = status.status; % <-- FIXME: is this used/useful for anything?
 
       % TODO: 2022-06-09
@@ -115,7 +143,14 @@ classdef oephys < neurostim.plugins.ePhys
 
     function [response,status] = put(o,endpoint,payload)
       % issue http PUT request to the GUI
-      url = strjoin({o.hostAddr,'api',endpoint},'/');
+      %
+      %   [response,status] = o.put(endpoint,payload)
+
+      if ~iscell(endpoint)
+        endpoint = {endpoint};
+      end
+
+      url = strjoin({o.hostAddr,'api',endpoint{:}},'/');
 
       json = jsonencode(payload);
 
@@ -130,7 +165,14 @@ classdef oephys < neurostim.plugins.ePhys
 
     function [response,status] = get(o,endpoint)
       % issue http GET request to the GUI
-      url = strjoin({o.hostAddr,'api',endpoint},'/');
+      %
+      %   [response,status] = o.get(endpoint,payload)
+
+      if ~iscell(endpoint)
+        endpoint = {endpoint};
+      end
+
+      url = strjoin({o.hostAddr,'api',endpoint{:}},'/');
 
       [response,status] = urlread2(url,'GET');
 
