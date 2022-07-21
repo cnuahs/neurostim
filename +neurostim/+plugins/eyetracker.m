@@ -86,12 +86,14 @@ classdef eyetracker < neurostim.plugin
         end
         
         function afterFrame(o)
-            % fetch the latest sample from the eye tracker and update
-            % fields (e.g., .x, .y) for online behaviors etc.
-            o.getSample();
+            % fetch the latest sample from the eye tracker and stash it in o.eyeSample
+            o.updateSample();
 
+            % update fields (e.g., .x, .y) for online behaviors etc.
             s = o.eyeSample;
             [o.x,o.y] = o.raw2ns(s.x(o.eyeNr),s.y(o.eyeNr));
+
+            % TODO: if o.eye == BOTH, average the two eyes?
 
             o.pupilSize = s.parea(o.eyeNr);
             o.valid = s.valid(o.eyeNr);
@@ -113,15 +115,15 @@ classdef eyetracker < neurostim.plugin
             writeToFeed(o,'Blink Ends')
         end
 
-        function getSample(o)
-            s = o.eyeSample;
-            if o.useMouse
-                [currentX,currentY,buttons] = o.cic.getMouse;
-                if buttons(o.mouseButton) || o.continuous
-                    [s.x,s.y] = o.cic.physical2Pixel(currentX,currentY);
-                end
-            end
-            o.eyeSample = s;
+        function updateSample(o)
+          if ~o.useMouse, return; end
+          
+          s = o.eyeSample;
+          [currentX,currentY,buttons] = o.cic.getMouse;
+          if buttons(o.mouseButton) || o.continuous
+            [s.x,s.y] = o.cic.physical2Pixel(currentX,currentY);
+          end
+          o.eyeSample = s;
         end
 
         % Helper functions to transform eye sample data to/from neurostim's

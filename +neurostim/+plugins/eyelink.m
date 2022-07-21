@@ -397,7 +397,7 @@ classdef eyelink < neurostim.plugins.eyetracker
             % only the logged time in Neurostim to align, but strange.                        
         end
                 
-        function getSample(o) % note: called by eyetracker.afterFrame()
+        function updateSample(o) % note: called by eyetracker.afterFrame()
             if o.fake; return; end
 
             if o.getSamples
