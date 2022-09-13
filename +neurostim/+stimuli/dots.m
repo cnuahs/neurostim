@@ -97,6 +97,9 @@ classdef (Abstract) dots < neurostim.stimulus
       % log the RNG state
       o.rngState = o.rng.State;
 
+      % clear all dot properties
+      o.x = []; o.y = []; o.dx = []; o.dy = []; o.framesLeft = [];
+
       o.initDots(true(o.nrDots,1));
       
       % initialise frame counts for limited lifetime dots

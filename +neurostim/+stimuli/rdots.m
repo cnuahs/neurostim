@@ -19,11 +19,13 @@ classdef rdots < neurostim.stimuli.dots
 
       % sampling distribution (see makedist for details)
       o.addProperty('sampleFun','uniform');
-      o.addProperty('sampleParms',{'lower',-30,'upper',30});
+      o.addProperty('sampleParms',{'lower',0,'upper',360});
       o.addProperty('sampleBounds',[]);
 
       % values logged for debug/reconstruction only
       o.addProperty('callbackCnt',0);
+      o.addProperty('startFrame',Inf);
+      o.addProperty('stopFrame',Inf);
     end
 
     function initDots(o,ix)
@@ -55,7 +57,22 @@ classdef rdots < neurostim.stimuli.dots
       % log the callback counter
       o.callbackCnt = o.cnt;
 
+      if isinf(o.stopFrame) && ~isinf(o.startFrame)
+        o.stopFrame = o.cic.frame; % probably unnecessary?
+      end
+      
       o.initialized = false;
+    end
+
+    function afterFrame(o)
+      afterFrame@neurostim.stimuli.dots(o);
+
+      if isinf(o.startFrame) && ~isinf(o.startTime)  % set on first frame of this stimulus
+        o.startFrame = o.cic.frame;
+      end
+      if isinf(o.stopFrame) && ~isinf(o.stopTime) % set on last frame of this stimulus
+        o.stopFrame = o.cic.frame;
+      end
     end
 
     function [xyVals,dxdyVals] = reconstructStimulus(o,varargin)
@@ -87,11 +104,12 @@ classdef rdots < neurostim.stimuli.dots
 
       % Get variables
       sFun = get(o.prms.sampleFun,'trial',p.trial,'atTrialTime',Inf);
-      prms = get(o.prms.sampleParms,'trial',p.trial,'atTrialTime',Inf);
+      prms = get(o.prms.sampleParms,'trial',p.trial,'atTrialTime',Inf,'matrixIfPossible',false);
       bnds = get(o.prms.sampleBounds,'trial',p.trial,'atTrialTime',Inf,'matrixIfPossible',false);      
       rngSt = get(o.prms.rngState,'trial',p.trial,'atTrialTime',Inf);
       cbCtr = get(o.prms.callbackCnt,'trial',p.trial,'atTrialTime',Inf);
 
+      nrDots = get(o.prms.nrDots,'trial',p.trial,'atTrialTime',Inf);
       lifetime = get(o.prms.lifetime,'trial',p.trial,'atTrialTime',Inf);
 
       % FIXME: are 'direction' and 'speed' a good idea...
@@ -131,6 +149,7 @@ classdef rdots < neurostim.stimuli.dots
         o.sampleParms = prms{ii};
         o.sampleBounds = bnds{ii};
 
+        o.nrDots = nrDots(ii);
         o.lifetime = lifetime(ii);
 
         o.direction = direction(ii);
